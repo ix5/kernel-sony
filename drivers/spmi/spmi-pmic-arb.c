@@ -24,6 +24,7 @@
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <linux/spmi.h>
+#include <linux/syscore_ops.h>
 
 /* PMIC Arbiter configuration registers */
 #define PMIC_ARB_VERSION		0x0000
@@ -128,6 +129,8 @@ struct apid_data {
 	u8		write_ee;
 	u8		irq_ee;
 };
+
+static struct spmi_pmic_arb *the_pa;
 
 /**
  * spmi_pmic_arb - SPMI PMIC Arbiter object
@@ -519,7 +522,7 @@ static void cleanup_irq(struct spmi_pmic_arb *pmic_arb, u16 apid, int id)
 	writel_relaxed(irq_mask, pmic_arb->ver_ops->irq_clear(pmic_arb, apid));
 }
 
-static void periph_interrupt(struct spmi_pmic_arb *pmic_arb, u16 apid)
+static void periph_interrupt(struct spmi_pmic_arb *pmic_arb, u16 apid, bool show)
 {
 	unsigned int irq;
 	u32 status, id;
@@ -536,15 +539,27 @@ static void periph_interrupt(struct spmi_pmic_arb *pmic_arb, u16 apid)
 			cleanup_irq(pmic_arb, apid, id);
 			continue;
 		}
-		generic_handle_irq(irq);
+		if (show) {
+			struct irq_desc *desc;
+			const char *name = "null";
+
+			desc = irq_to_desc(irq);
+			if (desc == NULL)
+				name = "stray irq";
+			else if (desc->action && desc->action->name)
+				name = desc->action->name;
+
+			pr_warn("spmi_show_resume_irq: %d triggered [0x%01x, 0x%02x, 0x%01x] %s\n",
+				irq, sid, per, id, name);
+		} else {
+			generic_handle_irq(irq);
+		}
 	}
 }
 
-static void pmic_arb_chained_irq(struct irq_desc *desc)
+static void __pmic_arb_chained_irq(struct spmi_pmic_arb *pmic_arb, bool show)
 {
-	struct spmi_pmic_arb *pmic_arb = irq_desc_get_handler_data(desc);
 	const struct pmic_arb_ver_ops *ver_ops = pmic_arb->ver_ops;
-	struct irq_chip *chip = irq_desc_get_chip(desc);
 	int first = pmic_arb->min_apid >> 5;
 	int last = pmic_arb->max_apid >> 5;
 	u8 ee = pmic_arb->ee;
@@ -553,8 +568,6 @@ static void pmic_arb_chained_irq(struct irq_desc *desc)
 	/* status based dispatch */
 	bool acc_valid = false;
 	u32 irq_status = 0;
-
-	chained_irq_enter(chip, desc);
 
 	for (i = first; i <= last; ++i) {
 		status = readl_relaxed(
@@ -575,7 +588,7 @@ static void pmic_arb_chained_irq(struct irq_desc *desc)
 			enable = readl_relaxed(
 					ver_ops->acc_enable(pmic_arb, apid));
 			if (enable & SPMI_PIC_ACC_ENABLE_BIT)
-				periph_interrupt(pmic_arb, apid);
+				periph_interrupt(pmic_arb, apid, show);
 		}
 	}
 
@@ -595,12 +608,21 @@ static void pmic_arb_chained_irq(struct irq_desc *desc)
 					dev_dbg(&pmic_arb->spmic->dev,
 						"Dispatching IRQ for apid=%d status=%x\n",
 						i, irq_status);
-					periph_interrupt(pmic_arb, i);
+					periph_interrupt(pmic_arb, i, show);
 				}
 			}
 		}
 	}
 
+}
+
+static void pmic_arb_chained_irq(struct irq_desc *desc)
+{
+	struct spmi_pmic_arb *pmic_arb = irq_desc_get_handler_data(desc);
+	struct irq_chip *chip = irq_desc_get_chip(desc);
+
+	chained_irq_enter(chip, desc);
+	__pmic_arb_chained_irq(pmic_arb, false);
 	chained_irq_exit(chip, desc);
 }
 
@@ -1208,6 +1230,17 @@ static const struct irq_domain_ops pmic_arb_irq_domain_ops = {
 	.activate	= qpnpint_irq_domain_activate,
 };
 
+static void spmi_pmic_arb_resume(void)
+{
+	if (spmi_show_resume_irq())
+		__pmic_arb_chained_irq(the_pa, true);
+}
+
+static struct syscore_ops spmi_pmic_arb_syscore_ops = {
+	.resume = spmi_pmic_arb_resume,
+};
+
+
 static int spmi_pmic_arb_probe(struct platform_device *pdev)
 {
 	struct spmi_pmic_arb *pmic_arb;
@@ -1376,6 +1409,9 @@ static int spmi_pmic_arb_probe(struct platform_device *pdev)
 	if (err)
 		goto err_domain_remove;
 
+	the_pa = pmic_arb;
+	register_syscore_ops(&spmi_pmic_arb_syscore_ops);
+
 	return 0;
 
 err_domain_remove:
@@ -1392,6 +1428,8 @@ static int spmi_pmic_arb_remove(struct platform_device *pdev)
 	struct spmi_pmic_arb *pmic_arb = spmi_controller_get_drvdata(ctrl);
 	spmi_controller_remove(ctrl);
 	irq_set_chained_handler_and_data(pmic_arb->irq, NULL, NULL);
+	unregister_syscore_ops(&spmi_pmic_arb_syscore_ops);
+	the_pa = NULL;
 	irq_domain_remove(pmic_arb->domain);
 	spmi_controller_put(ctrl);
 	return 0;
