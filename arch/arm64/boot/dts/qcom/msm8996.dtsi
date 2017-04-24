@@ -1778,6 +1778,7 @@
 			snps,nominal-elastic-buffer;
 			snps,is-utmi-l1-suspend;
 			snps,hird-threshold = /bits/ 8 <0x0>;
+			qcom,usb-core-id = <0>;
 		};
 
 		qcom,usbbam@6b04000 {
@@ -1886,6 +1887,7 @@
 			snps,nominal-elastic-buffer;
 			snps,is-utmi-l1-suspend;
 			snps,hird-threshold = /bits/ 8 <0x0>;
+			qcom,usb-core-id = <1>;
 		};
 	};
 
@@ -1893,6 +1895,7 @@
 		compatible = "qcom,android-usb";
 		reg = <0x066bf0c8 0xc8>;
 		qcom,pm-qos-latency = <301 701 801>;
+		qcom,usb-core-id = <0>;
 	};
 
 	qusb_phy0: qusb@7411000 {
