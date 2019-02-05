@@ -200,7 +200,8 @@
 		qcom,clk-freq-out = <355000>;
 		pinctrl-0 = <&msm_gpio_6 &msm_gpio_7>;
 		pinctrl-1 = <&msm_gpio_6 &msm_gpio_7>;
-		status = "okay";
+		/* status = "okay"; */
+		status = "disabled";
 
 		/delete-node/ nq@28;
 

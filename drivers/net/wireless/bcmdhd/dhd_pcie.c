@@ -249,7 +249,8 @@ const bcm_iovar_t dhdpcie_iovars[] = {
 };
 
 
-#define MAX_READ_TIMEOUT	5 * 1000 * 1000
+/* TODO: Test if bumping this from 5s to 10s has any effect */
+#define MAX_READ_TIMEOUT	10 * 1000 * 1000
 
 #ifndef DHD_RXBOUND
 #define DHD_RXBOUND		64
@@ -5031,6 +5032,7 @@ dhdpcie_readshared(dhd_bus_t *bus)
 
 	shaddr = bus->dongle_ram_base + bus->ramsize - 4;
 	/* start a timer for 5 seconds */
+	/* TODO: Investigate this */
 #ifdef CUSTOMER_HW_31_2
 	while (((addr == 0) || (addr == bus->nvram_csm)) && (count++ < 500)) {
 #else

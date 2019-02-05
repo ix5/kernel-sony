@@ -430,13 +430,13 @@ SYSCALL_DEFINE2(timerfd_create, int, clockid, int, flags)
 
 	instance = atomic_inc_return(&instance_count);
 	get_task_comm(task_comm_buf, current);
-	snprintf(file_name_buf, sizeof(file_name_buf), "[timerfd%d_%.*s]",
-		 instance, (int)sizeof(task_comm_buf), task_comm_buf);
-
 	ufd = anon_inode_getfd(file_name_buf, &timerfd_fops, ctx,
 			       O_RDWR | (flags & TFD_SHARED_FCNTL_FLAGS));
 	if (ufd < 0)
 		kfree(ctx);
+
+	snprintf(file_name_buf, sizeof(file_name_buf), "[timerfd%d-fd%d_%.*s]",
+		 instance, ufd, (int)sizeof(task_comm_buf), task_comm_buf);
 
 	return ufd;
 }

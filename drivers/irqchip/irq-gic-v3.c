@@ -1134,20 +1134,20 @@ static int gic_set_affinity(struct irq_data *d, const struct cpumask *mask_val,
 int gic_v3_qcom_set_wake(struct irq_data *d, unsigned int on)
 {
 	int ret = 0; //-ENXIO;
-	unsigned int reg_offset, bit_offset;
-	unsigned int gicirq = gic_irq(d);
-	struct gic_chip_data *gic_data = irq_data_get_irq_chip_data(d);
+	/* unsigned int reg_offset, bit_offset; */
+	/* unsigned int gicirq = gic_irq(d); */
+	/* struct gic_chip_data *gic_data = irq_data_get_irq_chip_data(d); */
 
-	/* per-cpu interrupts cannot be wakeup interrupts */
-	WARN_ON(gicirq < 32);
+	/* /1* per-cpu interrupts cannot be wakeup interrupts *1/ */
+	/* WARN_ON(gicirq < 32); */
 
-	reg_offset = gicirq / 32;
-	bit_offset = gicirq % 32;
+	/* reg_offset = gicirq / 32; */
+	/* bit_offset = gicirq % 32; */
 
-	if (on)
-		gic_data->wakeup_irqs[reg_offset] |=  1 << bit_offset;
-	else
-		gic_data->wakeup_irqs[reg_offset] &=  ~(1 << bit_offset);
+	/* if (on) */
+	/* 	gic_data->wakeup_irqs[reg_offset] |=  1 << bit_offset; */
+	/* else */
+	/* 	gic_data->wakeup_irqs[reg_offset] &=  ~(1 << bit_offset); */
 
 	return ret;
 }
