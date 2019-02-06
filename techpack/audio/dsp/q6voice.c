@@ -2484,8 +2484,15 @@ static int voice_send_set_device_cmd(struct voice_data *v)
 			&cvp_setdev_cmd.cvp_set_device_v2.tx_topology_id,
 			&cvp_setdev_cmd.cvp_set_device_v2.rx_topology_id);
 
-	voice_set_topology_specific_info(v, CVP_VOC_RX_TOPOLOGY_CAL);
-	voice_set_topology_specific_info(v, CVP_VOC_TX_TOPOLOGY_CAL);
+	if (!(of_machine_is_compatible("qcom,msm8956") ||
+	      of_machine_is_compatible("qcom,apq8056") ||
+	      of_machine_is_compatible("qcom,msm8996") ||
+	      of_machine_is_compatible("qcom,msm8998") ||
+	      of_machine_is_compatible("qcom,sdm630")  ||
+	      of_machine_is_compatible("qcom,sdm660"))) {
+		voice_set_topology_specific_info(v, CVP_VOC_RX_TOPOLOGY_CAL);
+		voice_set_topology_specific_info(v, CVP_VOC_TX_TOPOLOGY_CAL);
+	}
 
 	cvp_setdev_cmd.cvp_set_device_v2.tx_port_id = v->dev_tx.port_id;
 	cvp_setdev_cmd.cvp_set_device_v2.rx_port_id = v->dev_rx.port_id;
@@ -2841,8 +2848,15 @@ static int voice_send_cvp_create_cmd(struct voice_data *v)
 			&cvp_session_cmd.cvp_session.tx_topology_id,
 			&cvp_session_cmd.cvp_session.rx_topology_id);
 
-	voice_set_topology_specific_info(v, CVP_VOC_RX_TOPOLOGY_CAL);
-	voice_set_topology_specific_info(v, CVP_VOC_TX_TOPOLOGY_CAL);
+	if (!(of_machine_is_compatible("qcom,msm8956") ||
+	      of_machine_is_compatible("qcom,apq8056") ||
+	      of_machine_is_compatible("qcom,msm8996") ||
+	      of_machine_is_compatible("qcom,msm8998") ||
+	      of_machine_is_compatible("qcom,sdm630")  ||
+	      of_machine_is_compatible("qcom,sdm660"))) {
+		voice_set_topology_specific_info(v, CVP_VOC_RX_TOPOLOGY_CAL);
+		voice_set_topology_specific_info(v, CVP_VOC_TX_TOPOLOGY_CAL);
+	}
 
 	cvp_session_cmd.cvp_session.direction = 2; /*tx and rx*/
 	cvp_session_cmd.cvp_session.tx_port_id = v->dev_tx.port_id;
