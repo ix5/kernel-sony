@@ -230,7 +230,13 @@ static void dump_common_audit_data(struct audit_buffer *ab,
 		audit_log_format(ab, " key=%d ", a->u.ipc_id);
 		break;
 	case LSM_AUDIT_DATA_CAP:
-		audit_log_format(ab, " capability=%d ", a->u.cap);
+        /* Only log DAC_OVERRIDE violations
+         * CAP_DAC_OVERRIDE = 1 (see include/uapi/linux/capability.h) */
+        if ((a->u.cap == 1) && (&a->u.file) && (&a->u.file->f_path)) {
+            audit_log_d_path(ab, "path=", &a->u.file->f_path);
+        } else {
+            audit_log_format(ab, " capability=%d ", a->u.cap);
+        }
 		break;
 	case LSM_AUDIT_DATA_PATH: {
 		struct inode *inode;
