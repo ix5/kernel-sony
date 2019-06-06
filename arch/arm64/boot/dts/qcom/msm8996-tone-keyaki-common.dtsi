@@ -69,10 +69,9 @@
 &somc_pinctrl {
 	/* If variant specific default setting is needed,
 	   fill pinctrl-1 value in <variant>.dtsi */
-	pinctrl-1 = <&msm_gpio_25 &msm_gpio_47 &msm_gpio_48
-		&msm_gpio_59 &msm_gpio_60 &msm_gpio_61 &msm_gpio_69
-		&msm_gpio_78 &msm_gpio_85 &msm_gpio_86 &msm_gpio_104
-		&msm_gpio_127 &msm_gpio_131>;
+	pinctrl-1 = <&msm_gpio_25 &msm_gpio_59 &msm_gpio_60
+		&msm_gpio_61 &msm_gpio_69 &msm_gpio_78 &msm_gpio_85
+		&msm_gpio_86 &msm_gpio_104 &msm_gpio_127 &msm_gpio_131>;
 };
 
 /{
