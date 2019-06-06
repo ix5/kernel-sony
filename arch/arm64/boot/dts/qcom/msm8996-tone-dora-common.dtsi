@@ -28,6 +28,82 @@
 			};
 		};
 	};
+
+	somc_pinctrl: somc_pinctrl@0 {
+		pinctrl-0 = <&msm_gpio_4
+				&msm_gpio_5 &msm_gpio_6 &msm_gpio_7 &msm_gpio_8 &msm_gpio_9
+				&msm_gpio_10 &msm_gpio_11 &msm_gpio_12 &msm_gpio_13
+				&msm_gpio_14 &msm_gpio_15 &msm_gpio_16 &msm_gpio_17
+				&msm_gpio_18 &msm_gpio_19 &msm_gpio_20 &msm_gpio_21
+				&msm_gpio_22 &msm_gpio_23 &msm_gpio_24 &msm_gpio_25
+				&msm_gpio_26 &msm_gpio_27 &msm_gpio_28 &msm_gpio_29
+				&msm_gpio_30 &msm_gpio_31 &msm_gpio_32 &msm_gpio_33
+				&msm_gpio_34 &msm_gpio_38 &msm_gpio_39 &msm_gpio_40
+				&msm_gpio_41 &msm_gpio_42 &msm_gpio_43 &msm_gpio_44_suspend
+				&msm_gpio_45 &msm_gpio_46 &msm_gpio_47 &msm_gpio_48
+				&msm_gpio_49 &msm_gpio_50 &msm_gpio_51 &msm_gpio_52
+				&msm_gpio_55 &msm_gpio_56 &msm_gpio_57 &msm_gpio_58
+				&msm_gpio_59 &msm_gpio_60 &msm_gpio_61 &msm_gpio_62
+				&msm_gpio_63 &msm_gpio_69 &msm_gpio_73 &msm_gpio_74
+				&msm_gpio_75 &msm_gpio_76 &msm_gpio_77 &msm_gpio_78
+				&msm_gpio_79 &msm_gpio_81 &msm_gpio_82_suspend &msm_gpio_83
+				&msm_gpio_84 &msm_gpio_85 &msm_gpio_87
+				&msm_gpio_88 &msm_gpio_89 &msm_gpio_90 &msm_gpio_91
+				&msm_gpio_92 &msm_gpio_93 &msm_gpio_94 &msm_gpio_95
+				&msm_gpio_96 &msm_gpio_108 &msm_gpio_112 &msm_gpio_116
+				&msm_gpio_120 &msm_gpio_121 &msm_gpio_122 &msm_gpio_123
+				&msm_gpio_124 &msm_gpio_125 &msm_gpio_126 &msm_gpio_130
+				&msm_gpio_131 &msm_gpio_132 &msm_gpio_141 &msm_gpio_142
+				&msm_gpio_143>;
+	};
+};
+
+i2c_3: i2c@7577000 { /* BLSP1 QUP2 */
+		pinctrl-0 = <&msm_gpio_47 &msm_gpio_48>;
+		pinctrl-1 = <&msm_gpio_47 &msm_gpio_48>;
+};
+
+&tlmm {
+	/* GPIO_47 : NC */
+	msm_gpio_47: msm_gpio_47 {
+		mux {
+			pins = "gpio47";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio47";
+			drive-strength = <2>;
+			bias-disable;
+			output-low;
+		};
+	};
+
+	/* GPIO_48 : NC */
+	msm_gpio_48: msm_gpio_48 {
+		mux {
+			pins = "gpio48";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio48";
+			drive-strength = <2>;
+			bias-disable;
+			output-low;
+		};
+	};
+};
+
+
+&somc_pinctrl {
+	/* If variant specific default setting is needed,
+	   fill pinctrl-1 value in <variant>.dtsi */
+	pinctrl-1 = <&msm_gpio_25 &msm_gpio_47 &msm_gpio_47_suspend
+		&msm_gpio_48 &msm_gpio_48_suspend
+		&msm_gpio_59 &msm_gpio_60 &msm_gpio_61 &msm_gpio_78
+		&msm_gpio_85_suspend &msm_gpio_86_suspend &msm_gpio_104
+		&msm_gpio_127 &msm_gpio_131>;
 };
 
 /{
