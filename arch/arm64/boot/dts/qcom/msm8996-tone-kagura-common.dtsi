@@ -139,8 +139,10 @@
 		config {
 			pins = "gpio47";
 			drive-strength = <2>;
-			bias-disable;
+			/delete-property/ bias-disable;
 			/delete-property/ output-low;
+			bias-pull-down;
+			input-enable;
 		};
 	};
 
@@ -168,8 +170,10 @@
 		config {
 			pins = "gpio48";
 			drive-strength = <2>;
-			bias-disable;
+			/delete-property/ bias-disable;
 			/delete-property/ output-low;
+			bias-pull-down;
+			input-enable;
 		};
 	};
 
