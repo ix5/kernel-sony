@@ -36,6 +36,7 @@
 	/* I2C: BLSP5 */
 	i2c@c179000 { /* BLSP1 QUP5 */
 		synaptics_clearpad@2c {
+			glove_supported = <0>;
 			chip_id = <0x38>;
 
 			/* F01_RMI_CTRL05: Doze Holdoff */
