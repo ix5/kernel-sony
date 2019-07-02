@@ -264,9 +264,9 @@
 			interrupt-parent = <&tlmm>;
 			interrupts = <125 0x2>;
 			synaptics,irq_gpio = <&tlmm 125 0x00>;
-			post_probe_start = <1>;
+			post_probe_start = <0>;
 			synaptics,firmware_name = "touch_module_id_0x%02x.img";
-			flash_on_post_probe = <0>;
+			flash_on_post_probe = <1>;
 			flip_config = <0>;
 			watchdog_enabled = <1>;
 			watchdog_delay_ms = <3000>;
@@ -292,11 +292,13 @@
 					};
 					event_01 {
 						type = <1>; /* KEY */
+                        //code = <531>; /* TOUCHPAD_ON */
 						code = <143>; /* WAKEUP */
 						down = <1>;
 					};
 					event_02 {
 						type = <1>; /* KEY */
+                        //code = <531>; /* TOUCHPAD_ON */
 						code = <143>; /* WAKEUP */
 						down = <0>;
 					};
@@ -1165,9 +1167,9 @@
 	qcom,init-ldo-mode = <1>;
 	qcom,init-pin-ctrl-enable = <0>;
 	qcom,init-pin-ctrl-mode = <0>;
-	regulator-min-microvolt = <2200000>;
+	regulator-min-microvolt = <2500000>;
 	regulator-max-microvolt = <2500000>;
-	qcom,init-voltage = <2200000>;
+	qcom,init-voltage = <2500000>;
 	status = "okay";
 };
 
@@ -1245,9 +1247,9 @@
 	qcom,init-ldo-mode = <1>;
 	qcom,init-pin-ctrl-enable = <0>;
 	qcom,init-pin-ctrl-mode = <0>;
-	regulator-min-microvolt = <1000000>;
+	regulator-min-microvolt = <1200000>;
 	regulator-max-microvolt = <1200000>;
-	qcom,init-voltage = <1000000>;
+	qcom,init-voltage = <1200000>;
 	status = "okay";
 };
 
@@ -2246,7 +2248,7 @@
 	/* GPIO_68 : BT_PCM_DOUT */
 	/* Follow QTI */
 
-	/* GPIO_69 : NC (backup for AUDIO_REF_CLK) */
+	/* GPIO_69 : CAM_SOF_INT */
 	msm_gpio_69: msm_gpio_69 {
 		mux {
 			pins = "gpio69";
@@ -2256,8 +2258,20 @@
 		config {
 			pins = "gpio69";
 			drive-strength = <2>;
-			bias-disable;
-			output-low;
+			bias-pull-up;
+		};
+	};
+	msm_gpio_69_suspend: msm_gpio_69_suspend {
+		mux {
+			pins = "gpio69";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio69";
+			drive-strength = <2>;
+			bias-pull-down;
+			input-enable;
 		};
 	};
 
