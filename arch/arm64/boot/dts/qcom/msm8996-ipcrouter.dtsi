@@ -34,6 +34,7 @@
 		qcom,xprt-linkid = <1>;
 		qcom,xprt-version = <1>;
 		qcom,fragmented-data;
+		qcom,low-latency-xprt;
 	};
 
 	qcom,ipc_router_dsps_xprt {
@@ -44,6 +45,7 @@
 		qcom,xprt-linkid = <1>;
 		qcom,xprt-version = <1>;
 		qcom,fragmented-data;
+		qcom,low-latency-xprt;
 	};
 
 	qcom,ipc_router_external_modem_xprt2 {

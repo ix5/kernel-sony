@@ -3606,6 +3606,7 @@ static int gpucc_msm8996_set_vdd_class(int gpuver)
 		clk_data->rate_max[VDD_GFX_TURBO] = 624000000;
 		vdd_gfx.num_levels = VDD_GFX_TURBO + 1;
 		vdd_gpu_mx.num_levels = VDD_MX_TURBO + 1;
+		gfx3d_clk_src.clk_nb.notifier_call = gpu_clk_notifier_cb;
 		break;
 	case GPUCC_MSM8996_PRO:
 		pr_debug("Setting MSM8996PRO GPU DVFS boundaries\n");
