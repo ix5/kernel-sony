@@ -670,6 +670,7 @@
 	};
 
 	brcmf: brcmf@1 {
+		// 1x size-cell, 1x address-cell -> one missing!
 		reg = <1>;
 		compatible = "brcm,bcm4329-fmac";
 		interrupt-parent = <&tlmm>;

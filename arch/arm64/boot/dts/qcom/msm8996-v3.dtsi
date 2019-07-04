@@ -97,6 +97,8 @@
 	clock-names = "core_clk", "core_root_clk";
 	clocks = <&clock_gpu GPU_GX_GFX3D_CLK>,
 		 <&clock_gpu GFX3D_CLK_SRC>;
+// Compare:
+//		 <&clock_gpu clk_gfx3d_clk_src_v2>;
 };
 
 /* GPU overrides */

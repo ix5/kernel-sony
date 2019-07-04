@@ -19,7 +19,12 @@
 	tlmm: pinctrl@01010000 {
 		compatible = "qcom,msm8996-pinctrl";
 		reg = <0x01010000 0x300000>;
+		/* See cbd27db503b85: arm64: DT: MSM8998: Propagate PMIC pinctrl to DT nodes
+		 * c2efadf223001: arm64: DT: Tone: Fix PMIC GPIOs drive strengths and init
+		 * Already introduced somc_pinctrl@0 so only the re-enable of "interrupts" was missing?
+		 */
 		//interrupts = <0 208 0>;
+		interrupts = <0 208 0>;
 		interrupts-extended = <&wakegic GIC_SPI 208 IRQ_TYPE_NONE>;
 		gpio-controller;
 		#gpio-cells = <2>;

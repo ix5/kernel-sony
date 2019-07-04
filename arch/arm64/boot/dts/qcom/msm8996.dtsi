@@ -335,7 +335,7 @@
 		qcom,clock-source-override;
 	};
 
-	intc: interrupt-controller@9bc0000 {
+	intc: interrupt-controller@09bc0000 {
 		compatible = "arm,gic-v3";
 		#interrupt-cells = <3>;
 		#address-cells = <1>;
@@ -349,6 +349,7 @@
 		      <0x9c00000 0x100000>;      /* GICR * 4 */
 		interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
 
+        // WTF? intc is its own interrupt parent?
 		interrupt-parent = <&intc>;
 		arm,gicv3-plat-qcom-legacy;
 
@@ -762,6 +763,7 @@
 
 	msm_cpufreq: qcom,msm-cpufreq {
 		compatible = "qcom,msm-cpufreq";
+        // Only per-cluster now? Used to control cpu1 and cpu3 as well on 4.4
 		clock-names = "l2_clk", "cpu0_clk", "cpu2_clk";
 		clocks = <&clock_cbf P_CBF_MUX>,
 			 <&clock_cpu P_PWRCL_MUX>,
@@ -831,6 +833,7 @@
 		reg = <0x06400000 0x80210>,
 		      <0x09A11000 0x10000>,
 		      <0x00074130    0x8>;
+        // Careful here, some regs were taken out
 		reg-names = "clusters_base", "cbf_base", "efuse";
 		vdd-pwrcl-supply = <&apc0_pwrcl_vreg>;
 		vdd-perfcl-supply = <&apc1_vreg>;
@@ -930,6 +933,7 @@
 		clock-names = "xo", "gpll0", "gpll0_div",
 				"pclk0_src", "pclk1_src",
 				"byte0_src", "byte1_src";
+        // Seems angelo forgot to convert this one?
 				//"extpclk_src";
 		clocks = <&clock_rpmcc RPM_XO_CLK_SRC>,
 			 <&clock_gcc GPLL0>,
@@ -938,6 +942,7 @@
 			 <&mdss_dsi1_pll PIX1_MUX_CLK>,
 			 <&mdss_dsi0_pll BYTE0_MUX_CLK>,
 			 <&mdss_dsi1_pll BYTE1_MUX_CLK>;
+        // And this one as well?
 //			<&mdss_hdmi_pll clk_hdmi_vco_clk>;
 		#clock-cells = <1>;
 		#reset-cells = <1>;
@@ -1087,6 +1092,7 @@
 		interrupt-names = "slimbus_irq", "slimbus_bam_irq";
 		qcom,apps-ch-pipes = <0x60000000>;
 		qcom,ea-pc = <0x160>;
+        // TODO: Compare with loire, might be needed in more places?
 		qcom,legacy-pwr-msg;
 
 		msm_dai_slim {

@@ -26,6 +26,7 @@
 		uart_console_active: uart_console_active {
 			mux {
 				pins = "gpio4", "gpio5";
+				// 8998 has only blsp_uart8
 				function = "blsp_uart8_a";
 			};
 

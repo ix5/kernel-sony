@@ -951,7 +951,7 @@
 
 	pm8994_gp22 {
 		pm8994_gpio_22: gpio22 {
-			pins = "gpio17";
+			pins = "gpio22";
 			function = "normal";
 			drive-push-pull;
 		};
