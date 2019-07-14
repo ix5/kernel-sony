@@ -3119,10 +3119,17 @@ static int arm_smmu_add_device(struct device *dev)
 		cfg->smendx[i] = INVALID_SMENDX;
 
 	ret = arm_smmu_master_alloc_smes(dev);
-	if (ret)
+	if (ret) {
+        if (fwspec)
+            kfree(fwspec->iommu_priv);
+        kfree(cfg);
 		goto out_pwr_off;
+    }
 
 	arm_smmu_power_off(smmu->pwr);
+    if (fwspec)
+        kfree(fwspec->iommu_priv);
+    kfree(cfg);
 	return 0;
 
 out_pwr_off:

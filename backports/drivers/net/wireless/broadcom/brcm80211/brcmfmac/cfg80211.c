@@ -3398,6 +3398,7 @@ brcmf_notify_sched_scan_results(struct brcmf_if *ifp,
 						    netinfo->SSID_len,
 						    netinfo->channel);
 		if (err)
+            kfree(request);
 			goto out_err;
 	}
 
