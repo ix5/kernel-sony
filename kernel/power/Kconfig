@@ -342,5 +342,13 @@ config CPU_PM
 	bool
 
 config DEDUCE_WAKEUP_REASONS
-	bool
+	bool "DEBUG: Deduce wakeup reasons"
+	depends on PM
 	default n
+	help
+	  Enable debugging to deduce wakeup reasons (mainly used to tell
+	  if an unregistered and unhandle IRQ fires).
+	  This adds overhead.
+
+	  Do NOT say Y here if you are NOT debugging the wakeups.
+	  If in doubt, say N.
