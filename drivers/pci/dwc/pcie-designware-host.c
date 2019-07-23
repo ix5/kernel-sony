@@ -104,17 +104,20 @@ irqreturn_t dw_handle_msi_irq(struct pcie_port *pp)
 }
 
 /* Chained MSI interrupt service routine */
-static void dw_chained_msi_isr(struct irq_desc *desc)
+static bool dw_chained_msi_isr(struct irq_desc *desc)
 {
 	struct irq_chip *chip = irq_desc_get_chip(desc);
 	struct pcie_port *pp;
+	int res;
 
 	chained_irq_enter(chip, desc);
 
 	pp = irq_desc_get_handler_data(desc);
-	dw_handle_msi_irq(pp);
+	res = dw_handle_msi_irq(pp);
 
 	chained_irq_exit(chip, desc);
+
+	return res == 1;
 }
 
 static void dw_pci_setup_msi_msg(struct irq_data *data, struct msi_msg *msg)
