@@ -1545,10 +1545,29 @@ void configure_early_pll(struct clk_alpha_pll *pll, int base, bool is_alt,
 int __init qcom_cpu_clk_msm8996_early_init(void)
 {
 	int ret = 0;
+	int i;
 	void __iomem *auxbase, *acd_recal_base;
 	u32 regval;
 
 	pr_info("clock-cpu-8996: configuring clocks for the perf cluster\n");
+
+	/* From OD 4.4 drivers/clk/msm/clock-cpu-8996.c
+	if (cpu_clocks_v3) {
+		pwrcl_alt_pll.offline_bit_workaround = false;
+		perfcl_alt_pll.offline_bit_workaround = false;
+		pwrcl_pll.pgm_test_ctl_enable = false;
+		perfcl_pll.pgm_test_ctl_enable = false;
+		pwrcl_pll.vals.config_ctl_val = 0x200d4828;
+		pwrcl_pll.vals.config_ctl_hi_val = 0x006;
+		perfcl_pll.vals.config_ctl_val = 0x200d4828;
+		perfcl_pll.vals.config_ctl_hi_val = 0x006;
+		cbf_pll.vals.config_ctl_val = 0x200d4828;
+		cbf_pll.vals.config_ctl_hi_val = 0x006;
+		pwrcl_pll.vals.test_ctl_lo_val = 0x1C000000;
+		perfcl_pll.vals.test_ctl_lo_val = 0x1C000000;
+		cbf_pll.vals.test_ctl_lo_val = 0x1C000000;
+	}
+	*/
 
 	/*
 	 * We definitely don't want to parse DT here - this is too early and in
@@ -1669,6 +1688,13 @@ int __init qcom_cpu_clk_msm8996_early_init(void)
 	writel_relaxed(0x00118000, early_bases[APC1_EARLY_BASE]);
 
 	/*
+	 * Enable FSM mode on the alternate PLLs.
+	 * This should turn on the PLLs as well.
+	 */
+	writel_relaxed(0x00118000, early_bases[APC0_EARLY_BASE]);
+	writel_relaxed(0x00118000, early_bases[APC1_EARLY_BASE]);
+
+	/*
 	 * Enable FSM mode on the CBF PLL.
 	 * This should turn on the PLL as well.
 	 */
@@ -1704,7 +1730,16 @@ int __init qcom_cpu_clk_msm8996_early_init(void)
 	/* Enable ACD on this cluster if necessary */
 	qcom_cpu_clk_msm8996_acd_init();
 
-	//BUG_ON(register_hotcpu_notifier(&clk_cpu_8996_hotplug_notifier));
+	/* Ensure we never use the non-ACD leg of the GFMUX */
+	for (i = 0; i < pwrcl_hf_mux.num_parents; i++)
+		if (pwrcl_hf_mux.parents[i].src == &pwrcl_pll.c)
+			pwrcl_hf_mux.parents[i].sel = 2;
+
+	for (i = 0; i < perfcl_hf_mux.num_parents; i++)
+		if (perfcl_hf_mux.parents[i].src == &perfcl_pll.c)
+			perfcl_hf_mux.parents[i].sel = 2;
+
+	BUG_ON(register_hotcpu_notifier(&clk_cpu_8996_hotplug_notifier));
 
 	/* Pulse swallower and soft-start settings */
 	writel_relaxed(0x00030005, early_bases[APC0_EARLY_BASE] + PSCTL_OFFSET);
@@ -1717,6 +1752,12 @@ int __init qcom_cpu_clk_msm8996_early_init(void)
 	writel_relaxed(0x32, early_bases[APC0_EARLY_BASE] + MUX_OFFSET);
 	writel_relaxed(0x32, early_bases[APC1_EARLY_BASE] + MUX_OFFSET);
 
+	/*
+	 * One time print during boot - this is the earliest time
+	 * that Linux configures the CPU clocks. It's critical for
+	 * debugging that we know that this configuration completed,
+	 * especially when debugging CPU hangs.
+	 */
 	pr_info("%s: finished CPU clock configuration\n", __func__);
 
 	iounmap(acd_recal_base);
