@@ -10,12 +10,12 @@ clk-qcom-y += clk-branch.o
 clk-qcom-y += clk-regmap-divider.o
 clk-qcom-y += clk-regmap-mux.o
 clk-qcom-y += clk-regmap-mux-div.o
-clk-qcom-$(CONFIG_KRAIT_CLOCKS) += clk-krait.o
+clk-qcom-$(CONFIG_KRAIT_CLOCKS) += clk-krait.o # No
 clk-qcom-y += clk-hfpll.o
 clk-qcom-y += reset.o clk-voter.o
 clk-qcom-y += clk-dummy.o clk-debug.o
-clk-qcom-$(CONFIG_RCGWR_CLOCKS) += clk-rcgwr.o
-clk-qcom-$(CONFIG_QCOM_GDSC) += gdsc.o gdsc-regulator.o
+clk-qcom-$(CONFIG_RCGWR_CLOCKS) += clk-rcgwr.o # Yes
+clk-qcom-$(CONFIG_QCOM_GDSC) += gdsc.o gdsc-regulator.o # Yes
 
 # Keep alphabetically sorted by config
 obj-$(CONFIG_APQ_GCC_8084) += gcc-apq8084.o
