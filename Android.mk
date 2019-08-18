@@ -19,14 +19,16 @@ ifeq ($(BUILD_KERNEL),true)
 ifeq ($(PRODUCT_PLATFORM_SOD),true)
 ifeq ($(SOMC_KERNEL_VERSION),4.9)
 
-KERNEL_SRC := $(call my-dir)
+KERNEL_SRC := $(shell pwd)/$(call my-dir)
 
 ## Internal variables
-ifeq ($(OUT_DIR),out)
+#ifeq ($(OUT_DIR),out)
+#KERNEL_OUT := $(shell pwd)/$(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ
+#else
+#KERNEL_OUT := $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ
+#endif
+#KERNEL_OUT := $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ
 KERNEL_OUT := $(shell pwd)/$(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ
-else
-KERNEL_OUT := $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ
-endif
 KERNEL_CONFIG := $(KERNEL_OUT)/.config
 KERNEL_OUT_STAMP := $(KERNEL_OUT)/.mkdir_stamp
 
@@ -56,19 +58,21 @@ ifeq ($(KERNEL_HEADER_DEFCONFIG),)
 KERNEL_HEADER_DEFCONFIG := $(KERNEL_DEFCONFIG)
 endif
 
-ifneq ($(BOARD_KERNEL_IMAGE_NAME),)
-  TARGET_PREBUILT_INT_KERNEL_TYPE := $(BOARD_KERNEL_IMAGE_NAME)
-else
-  ifeq ($(TARGET_USES_UNCOMPRESSED_KERNEL),true)
-    TARGET_PREBUILT_INT_KERNEL_TYPE := Image
-  else
-    ifeq ($(KERNEL_ARCH),arm64)
-      TARGET_PREBUILT_INT_KERNEL_TYPE := Image.gz
-    else
-      TARGET_PREBUILT_INT_KERNEL_TYPE := zImage
-    endif
-  endif
-endif
+# BOARD_KERNEL_IMAGE_NAME=Image.gz-dtb
+TARGET_PREBUILT_INT_KERNEL_TYPE := $(BOARD_KERNEL_IMAGE_NAME)
+#ifneq ($(BOARD_KERNEL_IMAGE_NAME),)
+#  TARGET_PREBUILT_INT_KERNEL_TYPE := $(BOARD_KERNEL_IMAGE_NAME)
+#else
+#  ifeq ($(TARGET_USES_UNCOMPRESSED_KERNEL),true)
+#    TARGET_PREBUILT_INT_KERNEL_TYPE := Image
+#  else
+#    ifeq ($(KERNEL_ARCH),arm64)
+#      TARGET_PREBUILT_INT_KERNEL_TYPE := Image.gz
+#    else
+#      TARGET_PREBUILT_INT_KERNEL_TYPE := zImage
+#    endif
+#  endif
+#endif
 
 TARGET_PREBUILT_INT_KERNEL := $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(TARGET_PREBUILT_INT_KERNEL_TYPE)
 
@@ -89,12 +93,15 @@ MAKE_FLAGS :=
 ifeq ($(KERNEL_ARCH),arm64)
   # Avoid "unsupported RELA relocation: 311" errors (R_AARCH64_ADR_GOT_PAGE)
   MAKE_FLAGS += CFLAGS_MODULE="-fno-pic"
-  ifeq ($(TARGET_ARCH),arm)
-    KERNEL_CONFIG_OVERRIDE := CONFIG_ANDROID_BINDER_IPC_32BIT=y
-  endif
+  # TARGET_ARCH=arm64
+  #ifeq ($(TARGET_ARCH),arm)
+  #  KERNEL_CONFIG_OVERRIDE := CONFIG_ANDROID_BINDER_IPC_32BIT=y
+  #endif
 endif
 
 
+
+# TARGET_PREBUILT_INT_KERNEL=$(KERNEL_OUT)/arch/arm64/boot/Image.gz-dtb
 KERNEL_BIN := $(TARGET_PREBUILT_INT_KERNEL)
 
 KERNEL_HEADERS_INSTALL := $(KERNEL_OUT)/usr
@@ -104,29 +111,46 @@ KERNEL_MODULES_INSTALL := system
 KERNEL_MODULES_OUT := $(TARGET_OUT)/lib/modules
 
 # Target architecture cross compile
+# TARGET_KERNEL_CROSS_COMPILE_PREFIX=aarch64-linux-android-
 TARGET_KERNEL_CROSS_COMPILE_PREFIX := $(strip $(TARGET_KERNEL_CROSS_COMPILE_PREFIX))
-ifeq ($(TARGET_KERNEL_CROSS_COMPILE_PREFIX),)
-KERNEL_TOOLCHAIN_PREFIX ?= arm-eabi-
-else
+#ifeq ($(TARGET_KERNEL_CROSS_COMPILE_PREFIX),)
+#KERNEL_TOOLCHAIN_PREFIX ?= arm-eabi-
+#else
+#KERNEL_TOOLCHAIN_PREFIX ?= $(TARGET_KERNEL_CROSS_COMPILE_PREFIX)
+#endif
 KERNEL_TOOLCHAIN_PREFIX ?= $(TARGET_KERNEL_CROSS_COMPILE_PREFIX)
-endif
 
-ifeq ($(KERNEL_TOOLCHAIN),)
-KERNEL_TOOLCHAIN_PATH := $(KERNEL_TOOLCHAIN_PREFIX)
-else
-ifneq ($(KERNEL_TOOLCHAIN_PREFIX),)
+# clang-r365631 is clang 9.0.6
+
+#export GCC_CC=../../prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+#export CLANG_CC=../../prebuilts/clang/host/linux-x86/clang-4691093/bin/clang
+#export CROSS_COMPILE_ARM32=../../prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin/arm-linux-androideabi-
+
+CLANG_CC := $(shell pwd)/prebuilts/clang/host/linux-x86/clang-r365631/bin/clang
+CLANG_CCXX := $(shell pwd)/prebuilts/clang/host/linux-x86/clang-r365631/bin/clang++
+
+#KERNEL_TOOLCHAIN := $(shell pwd)/prebuilts/clang/host/linux-x86/clang-r365631/bin/clang
+KERNEL_TOOLCHAIN := $(shell pwd)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin
+
+# KERNEL_TOOLCHAIN most likely empty
+#ifeq ($(KERNEL_TOOLCHAIN),)
+#KERNEL_TOOLCHAIN_PATH := $(KERNEL_TOOLCHAIN_PREFIX)
+#else
+#ifneq ($(KERNEL_TOOLCHAIN_PREFIX),)
+#KERNEL_TOOLCHAIN_PATH := $(KERNEL_TOOLCHAIN)/$(KERNEL_TOOLCHAIN_PREFIX)
+#endif
+#endif
 KERNEL_TOOLCHAIN_PATH := $(KERNEL_TOOLCHAIN)/$(KERNEL_TOOLCHAIN_PREFIX)
-endif
-endif
 
 # If building for 64-bits with VDSO32 support - 32-bit toolchain here
 # Also, if building for AArch64, preferrably set an AArch32 toolchain here.
+# TARGET_KERNEL_CROSS_COMPILE_32BITS_PREFIX=arm-linux-androideabi-
 TARGET_KERNEL_CROSS_COMPILE_32BITS_PREFIX := $(strip $(TARGET_KERNEL_CROSS_COMPILE_32BITS_PREFIX))
-ifeq ($(TARGET_KERNEL_CROSS_COMPILE_32BITS_PREFIX),)
-KERNEL_TOOLCHAIN_32BITS_PREFIX ?= arm-linux-androideabi-
-else
-KERNEL_TOOLCHAIN_32BITS_PREFIX ?= $(TARGET_KERNEL_CROSS_COMPILE_32BITS_PREFIX)
-endif
+#ifeq ($(TARGET_KERNEL_CROSS_COMPILE_32BITS_PREFIX),)
+#KERNEL_TOOLCHAIN_32BITS_PREFIX ?= arm-linux-androideabi-
+#else
+#KERNEL_TOOLCHAIN_32BITS_PREFIX ?= $(TARGET_KERNEL_CROSS_COMPILE_32BITS_PREFIX)
+#endif
 
 ifeq ($(KERNEL_TOOLCHAIN_32BITS),)
 KERNEL_TOOLCHAIN_32BITS_PATH := $(KERNEL_TOOLCHAIN_32BITS_PREFIX)
@@ -137,14 +161,24 @@ endif
 endif
 
 ifneq ($(USE_CCACHE),)
-    ccache := $(shell pwd)/prebuilts/misc/$(HOST_PREBUILT_TAG)/ccache/ccache
+    #ccache := $(shell pwd)/prebuilts/misc/$(HOST_PREBUILT_TAG)/ccache/ccache
+    # Prebuilt ccache is no longer shipped with Android since Q
+    ccache := /usr/bin/ccache
     # Check that the executable is here.
     ccache := $(strip $(wildcard $(ccache)))
 endif
 
-KERNEL_CROSS_COMPILE := CROSS_COMPILE="$(ccache) $(KERNEL_TOOLCHAIN_PATH)"
+#KERNEL_CROSS_COMPILE := CROSS_COMPILE="$(ccache) $(KERNEL_TOOLCHAIN_PATH)"
+KERNEL_CROSS_COMPILE := CC="$(CLANG_CC)" CLANG_TRIPLE="aarch64-linux-gnu" CLANG_CC="$(CLANG_CC)" CLANG_CCXX="$(CLANG_CCXX)" CROSS_COMPILE="$(KERNEL_TOOLCHAIN_PATH)"
+#KERNEL_CROSS_COMPILE += CROSS_COMPILE_ARM32="$(KERNEL_TOOLCHAIN_32BITS_PATH)"
+#KERNEL_CROSS_COMPILE := CROSS_COMPILE="/home/builder/omni/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-"
+#KERNEL_CROSS_COMPILE := CROSS_COMPILE="prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-"
+#KERNEL_CROSS_COMPILE := CROSS_COMPILE="aarch64-linux-android-"
+#KERNEL_CROSS_COMPILE += CROSS_COMPILE_ARM32="/home/builder/omni/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin/arm-linux-androideabi-"
+#KERNEL_CROSS_COMPILE += CROSS_COMPILE_ARM32="prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin/arm-linux-androideabi-"
+#KERNEL_CROSS_COMPILE += CROSS_COMPILE_ARM32="arm-linux-androideabi-"
 KERNEL_CROSS_COMPILE += CROSS_COMPILE_ARM32="$(KERNEL_TOOLCHAIN_32BITS_PATH)"
-ccache =
+#ccache =
 
 define mv-modules
     mdpath=`find $(KERNEL_MODULES_OUT) -type f -name modules.order`;\
@@ -163,17 +197,18 @@ define clean-module-folder
     fi
 endef
 
-ifeq ($(HOST_OS),darwin)
-ifeq (1,$(filter 1,$(shell echo "$$(( $(PLATFORM_SDK_VERSION) >= 24 ))" )))
-  MAKE_FLAGS += C_INCLUDE_PATH=$(shell pwd)/external/elfutils/libelf/
-else
-  MAKE_FLAGS += C_INCLUDE_PATH=$(shell pwd)/external/elfutils/src/libelf/
-endif
-endif
+# Who tf uses mac for this?
+#ifeq ($(HOST_OS),darwin)
+#ifeq (1,$(filter 1,$(shell echo "$$(( $(PLATFORM_SDK_VERSION) >= 24 ))" )))
+#  MAKE_FLAGS += C_INCLUDE_PATH=$(shell pwd)/external/elfutils/libelf/
+#else
+#  MAKE_FLAGS += C_INCLUDE_PATH=$(shell pwd)/external/elfutils/src/libelf/
+#endif
+#endif
 
-ifeq ($(TARGET_KERNEL_MODULES),)
-    TARGET_KERNEL_MODULES := no-external-modules
-endif
+#ifeq ($(TARGET_KERNEL_MODULES),)
+#    TARGET_KERNEL_MODULES := no-external-modules
+#endif
 
 $(KERNEL_OUT_STAMP):
 	$(hide) mkdir -p $(KERNEL_OUT)
@@ -184,14 +219,30 @@ $(KERNEL_OUT_STAMP):
 	$(hide) rm -rf $(KERNEL_DTBO_OUT)
 	$(hide) touch $@
 
+#$(KERNEL_CONFIG): $(KERNEL_OUT_STAMP) $(KERNEL_DEFCONFIG_SRC)
+#	@echo "Building Kernel Config"
+#	$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_DEFCONFIG)
+#	$(hide) if [ ! -z "$(KERNEL_CONFIG_OVERRIDE)" ]; then \
+#			echo "Overriding kernel config with '$(KERNEL_CONFIG_OVERRIDE)'"; \
+#			echo $(KERNEL_CONFIG_OVERRIDE) >> $(KERNEL_OUT)/.config; \
+#			$(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) oldconfig; fi
+
+#MAKE := $(shell pwd)/prebuilts/build-tools/linux-x86/bin/make
+
 $(KERNEL_CONFIG): $(KERNEL_OUT_STAMP) $(KERNEL_DEFCONFIG_SRC)
 	@echo "Building Kernel Config"
+	@echo "Path: $(PATH)"
+	@echo make: $(shell "which make")
 	$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_DEFCONFIG)
-	$(hide) if [ ! -z "$(KERNEL_CONFIG_OVERRIDE)" ]; then \
-			echo "Overriding kernel config with '$(KERNEL_CONFIG_OVERRIDE)'"; \
-			echo $(KERNEL_CONFIG_OVERRIDE) >> $(KERNEL_OUT)/.config; \
-			$(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) oldconfig; fi
 
+#	$(hide) if [ ! -z "$(KERNEL_CONFIG_OVERRIDE)" ]; then \
+#			echo "Overriding kernel config with '$(KERNEL_CONFIG_OVERRIDE)'"; \
+#			echo $(KERNEL_CONFIG_OVERRIDE) >> $(KERNEL_OUT)/.config; \
+#			$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) oldconfig; fi
+#	which gcc
+#	gcc -xc -E -v -
+
+.PHONY: TARGET_KERNEL_BINARIES
 TARGET_KERNEL_BINARIES: $(KERNEL_OUT_STAMP) $(KERNEL_CONFIG) $(KERNEL_HEADERS_INSTALL_STAMP) | $(ACP)
 	@echo "Building Kernel"
 	$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(TARGET_PREBUILT_INT_KERNEL_TYPE)
@@ -214,11 +265,40 @@ TARGET_KERNEL_BINARIES: $(KERNEL_OUT_STAMP) $(KERNEL_CONFIG) $(KERNEL_HEADERS_IN
 				echo "Kernel Modules not enabled" ; \
 			fi ;
 
-$(TARGET_KERNEL_MODULES): TARGET_KERNEL_BINARIES
+# TODO: We don't use modules so maybe drop this crap entirely
+.PHONY: $(TARGET_KERNEL_MODULES)
+$(TARGET_KERNEL_MODULES):
+	$(hide) if grep -q 'CONFIG_MODULES=y' $(KERNEL_CONFIG) ; \
+			then \
+				echo "Building Kernel Modules" ; \
+				$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) modules && \
+				$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) INSTALL_MOD_PATH=../../$(KERNEL_MODULES_INSTALL) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) modules_install && \
+				$(mv-modules) && \
+				$(clean-module-folder) ; \
+			else \
+				echo "Kernel Modules not enabled" ; \
+			fi ;
+#	$(mv-modules)
+#	$(clean-module-folder)
 
-$(TARGET_PREBUILT_INT_KERNEL): $(TARGET_KERNEL_MODULES)
-	$(mv-modules)
-	$(clean-module-folder)
+$(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_OUT_STAMP) $(KERNEL_CONFIG) $(KERNEL_HEADERS_INSTALL_STAMP)
+	@echo "Building Kernel"
+	$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(TARGET_PREBUILT_INT_KERNEL_TYPE)
+
+# .config: CONFIG_OF=y
+# TODO: Make rule for buliding dtbs?
+# Kinda not necessary since we're already building Image.gz-dtb:
+# common/CommonConfig.mk
+# BOARD_KERNEL_IMAGE_NAME := Image.gz-dtb
+$(TARGET_KERNEL_DTB): $(ACP)
+	$(hide) if grep -q 'CONFIG_OF=y' $(KERNEL_CONFIG) ; \
+			then \
+				echo "Building DTBs" ; \
+				$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) dtbs ; \
+			else \
+				echo "DTBs not enabled" ; \
+			fi ;
+	$(ACP) -fp $(KERNEL_DTB)/*.dtb $(KERNEL_DTB_OUT)/
 
 $(KERNEL_HEADERS_INSTALL_STAMP): $(KERNEL_OUT_STAMP) $(KERNEL_CONFIG)
 	@echo "Building Kernel Headers"
@@ -238,9 +318,11 @@ $(KERNEL_HEADERS_INSTALL_STAMP): $(KERNEL_OUT_STAMP) $(KERNEL_CONFIG)
 # provide this rule because there are dependencies on this throughout the repo
 $(KERNEL_HEADERS_INSTALL): $(KERNEL_HEADERS_INSTALL_STAMP)
 
+.PHONY: kerneltags
 kerneltags: $(KERNEL_OUT_STAMP) $(KERNEL_CONFIG)
 	$(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) tags
 
+.PHONY: kernelconfig
 kernelconfig: $(KERNEL_OUT_STAMP)
 	$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_DEFCONFIG)
 	env KCONFIG_NOTIMESTAMP=true \
@@ -262,15 +344,23 @@ $(TARGET_PREBUILT_DTBO): TARGET_KERNEL_BINARIES $(AVBTOOL)
 endif # TARGET_NEEDS_DTBOIMAGE
 
 ## Install it
-.PHONY: $(PRODUCT_OUT)/kernel
-$(PRODUCT_OUT)/kernel: $(KERNEL_BIN)
-	cp $(KERNEL_BIN) $(PRODUCT_OUT)/kernel
+#out/target/.../zImage: $(sort $(shell find -L $(KERNEL_SRCDIR)))
+#.PHONY: $(PRODUCT_OUT)/kernel
+#$(PRODUCT_OUT)/kernel: $(KERNEL_BIN) | $(ACP)
+#	@# Use Android's "cp" replacement, "acp".
+#	@# See https://android.googlesource.com/platform/build/+/master/tools/acp/README
+#	$(ACP) $(KERNEL_BIN) $(PRODUCT_OUT)/kernel
+#	@#cp $(KERNEL_BIN) $(PRODUCT_OUT)/kernel
+
+$(PRODUCT_OUT)/kernel:
+	cp kernel/sony/msm-4.9/common-kernel/kernel-dtb-kagura $(PRODUCT_OUT)/kernel
 
 ifeq ($(TARGET_NEEDS_DTBOIMAGE),true)
 .PHONY: $(PRODUCT_OUT)/dtbo.img
 $(PRODUCT_OUT)/dtbo.img: $(KERNEL_DTBO_OUT)
-	cp $(KERNEL_DTBO_OUT) $(PRODUCT_OUT)/dtbo.img
+	$(ACP) $(KERNEL_DTBO_OUT) $(PRODUCT_OUT)/dtbo.img
 endif # TARGET_NEEDS_DTBOIMAGE
+#	cp $(KERNEL_DTBO_OUT) $(PRODUCT_OUT)/dtbo.img
 
 endif # Sony Kernel version
 endif # Sony AOSP devices

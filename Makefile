@@ -301,9 +301,30 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
 	  else echo sh; fi ; fi)
 
-HOSTCC       = gcc
-HOSTCXX      = g++
+#HOSTCC       = gcc
+HOSTCC       = $(CLANG_CC)
+#HOSTCC       = clang
+#HOSTCXX      = g++
+HOSTCXX      = $(CLANG_CCXX)
+#HOSTCXX      = clang++
 HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89
+#HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89 \
+#	-I /home/builder/omni/prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8/lib/gcc/x86_64-linux/4.8.3/include \
+#	-I /home/builder/omni/prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8/lib/gcc/x86_64-linux/4.8.3/include-fixed \
+#	-I /home/builder/omni/prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8/x86_64-linux/include \
+#	-I /home/builder/omni/prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8/sysroot/usr/include/x86_64-linux-gnu \
+#	-I /home/builder/omni/prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8/sysroot/usr/include
+#ignoring nonexistent directory "/home/builder/omni/out/../lib/gcc/x86_64-linux/4.8.3/include"
+#ignoring nonexistent directory "/home/builder/omni/out/../lib/gcc/x86_64-linux/4.8.3/include-fixed"
+#ignoring nonexistent directory "/home/builder/omni/out/../lib/gcc/x86_64-linux/4.8.3/../../../../x86_64-linux/include"
+#ignoring nonexistent directory "/home/builder/omni/out/../lib/gcc/../../lib/gcc/x86_64-linux/4.8.3/include"
+#ignoring nonexistent directory "/tmp/gbiv-gcc-64-99K5up/1/x86_64-linux-glibc2.17-4.8/sysroot/usr/local/include/x86_64-linux-gnu"
+#ignoring nonexistent directory "/tmp/gbiv-gcc-64-99K5up/1/x86_64-linux-glibc2.17-4.8/sysroot/usr/local/include"
+#ignoring nonexistent directory "/home/builder/omni/out/../lib/gcc/../../lib/gcc/x86_64-linux/4.8.3/include-fixed"
+#ignoring nonexistent directory "/home/builder/omni/out/../lib/gcc/../../lib/gcc/x86_64-linux/4.8.3/../../../../x86_64-linux/include"
+#ignoring nonexistent directory "/tmp/gbiv-gcc-64-99K5up/1/x86_64-linux-glibc2.17-4.8/sysroot/usr/include/x86_64-linux-gnu"
+#ignoring nonexistent directory "/tmp/gbiv-gcc-64-99K5up/1/x86_64-linux-glibc2.17-4.8/sysroot/usr/include"
+#HOSTCXXFLAGS = -O2
 HOSTCXXFLAGS = -O2
 
 # Decide whether to build built-in, modular, or both.
