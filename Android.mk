@@ -29,18 +29,16 @@ KERNEL_OUT := $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ
 # Absolute path - needed for GCC/clang non-AOSP build-system make invocations
 KERNEL_OUT_ABS := $(PWD)/$(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ
 KERNEL_CONFIG := $(KERNEL_OUT)/.config
-KERNEL_OUT_STAMP := $(KERNEL_OUT)/.mkdir_stamp
-KERNEL_DTB_STAMP := $(KERNEL_OUT)/.dtb_stamp
+# Stamps - instead of .PHONY targets
+KERNEL_OUT_STAMP     := $(KERNEL_OUT)/.mkdir_stamp
+KERNEL_DTB_STAMP     := $(KERNEL_OUT)/.dtb_stamp
+KERNEL_MODULES_STAMP := $(KERNEL_OUT)/.modules_stamp
+KERNEL_TAGS_STAMP    := $(KERNEL_OUT)/.tags_stamp
 
 ifeq ($(call math_gt_or_eq,$(PLATFORM_SDK_VERSION),29),true)
   KERNEL_ANDROID_Q_OR_HIGHER := true
 else
-  # TODO: REMOVEME: Current(2019-08) master branch still reports PLATFORM_SDK_VERSION=28
-  ifeq ($(PLATFORM_VERSION),R)
-    KERNEL_ANDROID_Q_OR_HIGHER := true
-  else
-    KERNEL_ANDROID_Q_OR_HIGHER := false
-  endif
+  KERNEL_ANDROID_Q_OR_HIGHER := false
 endif
 
 TARGET_KERNEL_ARCH := $(strip $(TARGET_KERNEL_ARCH))
@@ -127,9 +125,8 @@ else
   CLANG_HOST_TOOLCHAIN := $(PWD)/prebuilts/clang/host/linux-x86/clang-4691093/bin
   GCC_HOST_TOOLCHAIN := $(PWD)/prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.15-4.8/x86_64-linux/bin
   GCC_HOST_TOOLCHAIN_LIBEXEC := $(PWD)/prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.15-4.8/libexec/gcc/x86_64-linux/4.8.3
-endif
+endif # KERNEL_ANDROID_Q_OR_HIGHER = true
 
-# TODO: Why no differentiation between host and cross arch? Is this done via CLANG_TRIPLE?
 CLANG_CC := $(CLANG_HOST_TOOLCHAIN)/clang
 CLANG_HOSTCC := $(CLANG_HOST_TOOLCHAIN)/clang
 CLANG_HOSTCXX := $(CLANG_HOST_TOOLCHAIN)/clang++
@@ -140,27 +137,19 @@ GCC_HOSTCXX := $(GCC_HOST_TOOLCHAIN)/gcc++
 GCC_HOSTAR := $(GCC_HOST_TOOLCHAIN)/ar
 GCC_HOSTLD := $(GCC_HOST_TOOLCHAIN)/ld
 
+KERNEL_TOOLCHAIN := $(PWD)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin
+KERNEL_TOOLCHAIN_32BITS := $(PWD)/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin
+KERNEL_HOST_TOOLCHAIN := $(GCC_HOST_TOOLCHAIN)
+KERNEL_HOST_TOOLCHAIN_LIBEXEC := $(GCC_HOST_TOOLCHAIN_LIBEXEC)
+KERNEL_HOSTAR := $(GCC_HOSTAR)
+KERNEL_HOSTLD := $(GCC_HOSTLD)
+
 ifeq ($(TARGET_KERNEL_USE_CLANG),true)
-  # TODO: Also use clang binutils
-  KERNEL_TOOLCHAIN := $(PWD)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin
-  # TODO: Also use clang 32bit binutils
-  KERNEL_TOOLCHAIN_32BITS := $(PWD)/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin
-  # TODO: Also use clang here for linker commands etc.
-  KERNEL_HOST_TOOLCHAIN := $(GCC_HOST_TOOLCHAIN)
-  KERNEL_HOST_TOOLCHAIN_LIBEXEC := $(GCC_HOST_TOOLCHAIN_LIBEXEC)
   KERNEL_HOSTCC := $(CLANG_HOSTCC)
   KERNEL_HOSTCXX := $(CLANG_HOSTCXX)
-  KERNEL_HOSTAR := $(GCC_HOSTAR)
-  KERNEL_HOSTLD := $(GCC_HOSTLD)
 else
-  KERNEL_TOOLCHAIN := $(PWD)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin
-  KERNEL_TOOLCHAIN_32BITS := $(PWD)/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin
-  KERNEL_HOST_TOOLCHAIN := $(GCC_HOST_TOOLCHAIN)
-  KERNEL_HOST_TOOLCHAIN_LIBEXEC := $(GCC_HOST_TOOLCHAIN_LIBEXEC)
   KERNEL_HOSTCC := $(GCC_HOSTCC)
   KERNEL_HOSTCXX := $(GCC_HOSTCXX)
-  KERNEL_HOSTAR := $(GCC_HOSTAR)
-  KERNEL_HOSTLD := $(GCC_HOSTLD)
 endif
 
 # Target architecture cross compile
@@ -168,12 +157,8 @@ TARGET_KERNEL_CROSS_COMPILE_PREFIX := $(strip $(TARGET_KERNEL_CROSS_COMPILE_PREF
 KERNEL_TOOLCHAIN_PREFIX ?= $(TARGET_KERNEL_CROSS_COMPILE_PREFIX)
 
 # Kernel toolchain - Use for binutils via $(CROSS_COMPILE)ar, $(CROSS_COMPILE)ld etc.
-ifeq ($(KERNEL_TOOLCHAIN),)
-  KERNEL_TOOLCHAIN_PATH := $(KERNEL_TOOLCHAIN_PREFIX)
-else
-  ifneq ($(KERNEL_TOOLCHAIN_PREFIX),)
-    KERNEL_TOOLCHAIN_PATH := $(KERNEL_TOOLCHAIN)/$(KERNEL_TOOLCHAIN_PREFIX)
-  endif
+ifneq ($(KERNEL_TOOLCHAIN_PREFIX),)
+  KERNEL_TOOLCHAIN_PATH := $(KERNEL_TOOLCHAIN)/$(KERNEL_TOOLCHAIN_PREFIX)
 endif
 
 # If building for 64-bits with VDSO32 support - 32-bit toolchain here
@@ -227,6 +212,7 @@ else
   KERNEL_CROSS_COMPILE += CROSS_COMPILE_ARM32="$(KERNEL_TOOLCHAIN_32BITS_PATH)"
 endif
 
+ifeq ($(KERNEL_ANDROID_Q_OR_HIGHER),true)
 # Standard $(MAKE) evaluates to:
 # prebuilts/build-tools/linux-x86/bin/ckati --color_warnings --kati_stats MAKECMDGOALS=
 # which is forbidden by Android Q's new "path_interposer" tool
@@ -241,6 +227,10 @@ endif
 KERNEL_MAKE := \
 	PATH="$(KERNEL_MAKE_EXTRA_PATH):$$PATH" \
 	$(KERNEL_PREBUILT_MAKE)
+else
+# Standard "make" is fine for Pie and below
+KERNEL_MAKE := make
+endif # KERNEL_ANDROID_Q_OR_HIGHER = true
 
 define mv-modules
     mdpath=`find $(KERNEL_MODULES_OUT) -type f -name modules.order`;\
@@ -272,22 +262,24 @@ $(KERNEL_CONFIG): $(KERNEL_OUT_STAMP) $(KERNEL_DEFCONFIG_SRC)
 	@echo "Building Kernel Config"
 	$(KERNEL_MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC_ABS) O=$(KERNEL_OUT_ABS) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_DEFCONFIG)
 
-# TODO: Use non-PHONY target for qcom wifi modules
-ifeq ($(TARGET_KERNEL_MODULES),)
-    TARGET_KERNEL_MODULES := no-external-modules
-endif
-.PHONY: $(TARGET_KERNEL_MODULES)
-$(TARGET_KERNEL_MODULES):
+$(KERNEL_MODULES_STAMP):
 	$(hide) if grep -q 'CONFIG_MODULES=y' $(KERNEL_CONFIG) ; \
 			then \
 				echo "Building Kernel Modules" ; \
-				$(KERNEL_MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC_ABS) O=$(KERNEL_OUT_ABS) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) modules && \
-				$(KERNEL_MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC_ABS) O=$(KERNEL_OUT_ABS) INSTALL_MOD_PATH=../../$(KERNEL_MODULES_INSTALL) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) modules_install && \
+				$(KERNEL_MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC_ABS) O=$(KERNEL_OUT_ABS) \
+					ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) modules && \
+				$(KERNEL_MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC_ABS) O=$(KERNEL_OUT_ABS) \
+					INSTALL_MOD_PATH=../../$(KERNEL_MODULES_INSTALL) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) modules_install && \
 				$(mv-modules) && \
 				$(clean-module-folder) ; \
 			else \
 				echo "Kernel Modules not enabled" ; \
 			fi ;
+ifeq ($(TARGET_KERNEL_MODULES),)
+TARGET_KERNEL_MODULES:
+else
+TARGET_KERNEL_MODULES: $(KERNEL_MODULES_STAMP)
+endif
 
 $(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_OUT_STAMP) $(KERNEL_CONFIG) $(KERNEL_HEADERS_INSTALL_STAMP)
 	@echo "Building Kernel"
@@ -325,12 +317,14 @@ $(KERNEL_HEADERS_INSTALL_STAMP): $(KERNEL_OUT_STAMP) $(KERNEL_CONFIG)
 # provide this rule because there are dependencies on this throughout the repo
 $(KERNEL_HEADERS_INSTALL): $(KERNEL_HEADERS_INSTALL_STAMP)
 
-.PHONY: kerneltags
-kerneltags: $(KERNEL_OUT_STAMP) $(KERNEL_CONFIG)
+kerneltags :=
+$(KERNEL_TAGS_STAMP): $(KERNEL_OUT_STAMP) $(KERNEL_CONFIG)
 	$(KERNEL_MAKE) -C $(KERNEL_SRC_ABS) O=$(KERNEL_OUT_ABS) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) tags
 
-.PHONY: kernelconfig
-kernelconfig: $(KERNEL_OUT_STAMP) | $(ACP)
+$(kerneltags): $(KERNEL_TAGS_STAMP)
+
+kernelconfig :=
+$(kernelconfig): $(KERNEL_OUT_STAMP) | $(ACP)
 	$(KERNEL_MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC_ABS) O=$(KERNEL_OUT_ABS) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_DEFCONFIG)
 	env KCONFIG_NOTIMESTAMP=true \
 		 $(KERNEL_MAKE) -C $(KERNEL_SRC_ABS) O=$(KERNEL_OUT_ABS) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) menuconfig
