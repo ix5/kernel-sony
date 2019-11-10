@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0
 prefix = /usr
 
-CC = gcc
-LEX = flex
-YACC = bison
+CC ?= gcc
+LEX ?= flex
+YACC ?= bison
 
 CFLAGS += -Wall -O2
 CFLAGS += -D__EXPORTED_HEADERS__ -I../../include/uapi -I../../include
