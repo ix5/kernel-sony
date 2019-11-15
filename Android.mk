@@ -22,12 +22,12 @@ ifeq ($(SOMC_KERNEL_VERSION),4.14)
 
 KERNEL_SRC := $(call my-dir)
 # Absolute path - needed for GCC/clang non-AOSP build-system make invocations
-KERNEL_SRC_ABS := $(PWD)/$(call my-dir)
+KERNEL_SRC_ABS := $(PWD)/$(KERNEL_SRC)
 
 ## Internal variables
 KERNEL_OUT := $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ-$(SOMC_KERNEL_VERSION)
 # Absolute path - needed for GCC/clang non-AOSP build-system make invocations
-KERNEL_OUT_ABS := $(PWD)/$(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ-$(SOMC_KERNEL_VERSION)
+KERNEL_OUT_ABS := $(PWD)/$(KERNEL_OUT)
 KERNEL_CONFIG := $(KERNEL_OUT)/.config
 KERNEL_OUT_STAMP := $(KERNEL_OUT)/.mkdir_stamp
 KERNEL_DTB_STAMP := $(KERNEL_OUT)/.dtb_stamp
@@ -133,9 +133,7 @@ GCC_HOSTLD := $(GCC_HOST_TOOLCHAIN)/ld
 # Set up cross compilers
 # ======================
 
-GCC_CC := $(PWD)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-
 LINARO_CC := $(LINARO_TOOLCHAIN_PATH)gcc
-CLANG_CC := $(CLANG_HOST_TOOLCHAIN)/clang
 
 # Set up target toolchains
 # ========================
@@ -159,22 +157,15 @@ KERNEL_HOSTCXX := $(CLANG_HOSTCXX)
 # GCC binutils are still needed
 KERNEL_HOSTAR := $(GCC_HOSTAR)
 KERNEL_HOSTLD := $(GCC_HOSTLD)
-# But we can set linaro's GCC as cross compiler
+# Use Linaro's GCC as cross compiler
 KERNEL_CC := $(LINARO_CC)
 
-# Full host GCC -> not possible on Q
-#KERNEL_HOSTCC := $(GCC_HOSTCC)
-#KERNEL_HOSTCXX := $(GCC_HOSTCXX)
-#KERNEL_HOSTAR := $(GCC_HOSTAR)
-#KERNEL_HOSTLD := $(GCC_HOSTLD)
-
 # Target architecture cross compile
-# TEMP: Hardcode
-#TARGET_KERNEL_CROSS_COMPILE_PREFIX := $(strip $(TARGET_KERNEL_CROSS_COMPILE_PREFIX))
-#KERNEL_TOOLCHAIN_PREFIX ?= $(TARGET_KERNEL_CROSS_COMPILE_PREFIX)
-KERNEL_TOOLCHAIN_PREFIX := aarch64-linux-android-
-#KERNEL_TOOLCHAIN_PREFIX := aarch64-linux-gnu-
-#TARGET_KERNEL_CROSS_COMPILE_32BITS_PREFIX := arm-linux-androideabi-
+TARGET_KERNEL_CROSS_COMPILE_PREFIX := $(strip $(TARGET_KERNEL_CROSS_COMPILE_PREFIX))
+ifeq ($(TARGET_KERNEL_CROSS_COMPILE_PREFIX),)
+KERNEL_TOOLCHAIN_PREFIX ?= arm-eabi-
+else
+KERNEL_TOOLCHAIN_PREFIX ?= $(TARGET_KERNEL_CROSS_COMPILE_PREFIX)
 
 # Kernel toolchain - Use for binutils via $(CROSS_COMPILE)ar, $(CROSS_COMPILE)ld etc.
 ifneq ($(KERNEL_TOOLCHAIN_PREFIX),)
@@ -190,13 +181,13 @@ else
   KERNEL_TOOLCHAIN_32BITS_PREFIX := $(TARGET_KERNEL_CROSS_COMPILE_32BITS_PREFIX)
 endif
 
+# Kernel toolchain 32-bits - Use for binutils via $(CROSS_COMPILE)ar, $(CROSS_COMPILE)ld etc.
 ifneq ($(KERNEL_TOOLCHAIN_32BITS_PREFIX),)
   KERNEL_TOOLCHAIN_32BITS_PATH := $(KERNEL_TOOLCHAIN_32BITS)/$(KERNEL_TOOLCHAIN_32BITS_PREFIX)
 endif
 
 ifneq ($(USE_CCACHE),)
-  # On Q, no prebuilt ccache is shipped
-  #ccache := $(PWD)/prebuilts/misc/$(HOST_PREBUILT_TAG)/ccache/ccache
+	# On Q, no prebuilt ccache is shipped. Rely on host:
   ccache := /usr/bin/ccache
   # Check that the executable is here.
   ccache := $(strip $(wildcard $(ccache)))
@@ -204,7 +195,7 @@ endif
 
 # /usr/bin/perl is more reliable than /bin/perl
 KERNEL_PERL := /usr/bin/perl
-# Set up flex (not allowed by Android's path_interposer)
+# Set up flex, bison, awk (not allowed by Android's path_interposer)
 KERNEL_FLEX := /usr/bin/flex
 KERNEL_YACC := /usr/bin/bison
 KERNEL_AWK := /usr/bin/awk
@@ -213,9 +204,9 @@ KERNEL_CROSS_COMPILE :=
 #ifeq ($(TARGET_KERNEL_CLANG_COMPILE),true)
 #  KERNEL_CROSS_COMPILE += CC="$(CLANG_CC)"
 #  KERNEL_CROSS_COMPILE += CLANG_TRIPLE="aarch64-linux-gnu"
+#else
+#  KERNEL_CROSS_COMPILE += CC="$(KERNEL_CC)"
 #endif
-#KERNEL_CROSS_COMPILE += CC="$(CLANG_CC)"
-#KERNEL_CROSS_COMPILE += CC="$(KERNEL_CC)"
 KERNEL_CROSS_COMPILE += HOSTCC="$(KERNEL_HOSTCC)"
 KERNEL_CROSS_COMPILE += HOSTAR="$(KERNEL_HOSTAR)"
 KERNEL_CROSS_COMPILE += HOSTLD="$(KERNEL_HOSTLD)"
@@ -232,8 +223,6 @@ else
   KERNEL_CROSS_COMPILE += CROSS_COMPILE="$(KERNEL_TOOLCHAIN_PATH)"
   KERNEL_CROSS_COMPILE += CROSS_COMPILE_ARM32="$(KERNEL_TOOLCHAIN_32BITS_PATH)"
 endif
-#KERNEL_CROSS_COMPILE += CROSS_COMPILE="$(KERNEL_TOOLCHAIN_PATH)"
-#KERNEL_CROSS_COMPILE += CROSS_COMPILE_ARM32="$(KERNEL_TOOLCHAIN_32BITS_PATH)"
 
 # Standard $(MAKE) evaluates to:
 # prebuilts/build-tools/linux-x86/bin/ckati --color_warnings --kati_stats MAKECMDGOALS=
