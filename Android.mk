@@ -354,6 +354,9 @@ $(PRODUCT_OUT)/kernel: $(KERNEL_BIN) | $(ACP)
 ifeq ($(TARGET_NEEDS_DTBOIMAGE),true)
 $(PRODUCT_OUT)/dtbo.img: $(KERNEL_DTBO_OUT)
 	$(ACP) $(KERNEL_DTBO_OUT) $(PRODUCT_OUT)/dtbo.img
+
+.PHONY: dtboimage
+dtboimage: $(PRODUCT_OUT)/dtbo.img
 endif # TARGET_NEEDS_DTBOIMAGE
 
 endif # Sony Kernel version
