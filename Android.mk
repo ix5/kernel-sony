@@ -104,6 +104,8 @@ KERNEL_HEADERS_INSTALL_STAMP := $(KERNEL_OUT)/.headers_install_stamp
 
 KERNEL_MODULES_INSTALL := system
 KERNEL_MODULES_OUT := $(TARGET_OUT)/lib/modules
+#KERNEL_MODULES_INSTALL := vendor
+#KERNEL_MODULES_OUT := $(TARGET_COPY_OUT_VENDOR)/lib/modules
 
 # Set up host toolchains
 # ======================
