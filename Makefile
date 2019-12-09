@@ -742,7 +742,7 @@ ifdef CONFIG_CC_STACKPROTECTOR
   stackp-path := $(srctree)/scripts/gcc-$(SRCARCH)_$(BITS)-has-stack-protector.sh
   stackp-check := $(wildcard $(stackp-path))
 endif
-KBUILD_CFLAGS += $(stackp-flag)
+KBUILD_CFLAGS += $(call cc-option,$(stackp-flag))
 
 ifeq ($(cc-name),clang)
 KBUILD_CPPFLAGS += $(call cc-option,-Qunused-arguments,)
