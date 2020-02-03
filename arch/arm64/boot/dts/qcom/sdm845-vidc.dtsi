@@ -21,6 +21,23 @@
 		reg = <0xaa00000 0x200000>;
 		interrupts = <GIC_SPI 174 IRQ_TYPE_LEVEL_HIGH>;
 
+		qcom,never-unload-fw;
+		qcom,sw-power-collapse;
+		qcom,domain-attr-non-fatal-faults;
+		qcom,domain-attr-cache-pagetables;
+		qcom,max-secure-instances = <2>;
+		qcom,max-hw-load = <3110400>; /* 4096x2160@90 */
+		qcom,max-hq-mbs-per-frame = <8160>;
+		qcom,max-hq-frames-per-sec = <60>;
+		qcom,max-b-frame-size = <8160>;
+		qcom,max-b-frames-per-sec = <60>;
+		qcom,power-collapse-delay = <1500>;
+		qcom,hw-resp-timeout = <1000>;
+		qcom,debug-timeout = <0>;
+		qcom,no-idle-indicator;
+		qcom,fw-cycles = <760000>;
+		qcom,fw-vpp-cycles = <166667>
+
 		/* LLCC Info */
 		cache-slice-names = "vidsc0", "vidsc1";
 		cache-slices = <&llcc 2>, <&llcc 3>;
