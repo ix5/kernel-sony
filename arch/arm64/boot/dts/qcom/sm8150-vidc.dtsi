@@ -21,6 +21,31 @@
 		reg = <0xaa00000 0x200000>;
 		interrupts = <GIC_SPI 174 IRQ_TYPE_LEVEL_HIGH>;
 
+		qcom,never-unload-fw;
+		qcom,sw-power-collapse;
+		qcom,domain-attr-non-fatal-faults;
+		qcom,max-secure-instances = <2>; /* As per design driver allows 3rd
+										  * instance as well since the secure
+										  * flags were updated later for the
+										  * current instance. Hence total
+										  * secure sessions would be
+										  * max-secure-instances + 1. */
+		qcom,max-hw-load = <3916800>;  /* 1920x1088/256 MBs@480fps. It is
+										* less any other usecases
+										* (ex: * 3840x2160@120fps, 4096x2160@96ps,
+										* 7680x4320@30fps) */
+		qcom,max-hq-mbs-per-frame = <8160>;
+		qcom,max-hq-frames-per-sec = <60>;
+		qcom,max-b-frame-size = <8160>;
+		qcom,max-b-frames-per-sec = <60>;
+		qcom,power-collapse-delay = <1500>;
+		qcom,hw-resp-timeout = <1000>;
+		qcom,debug-timeout = <0>;
+		qcom,domain-cvp;
+		qcom,decode-batching;
+		qcom,fw-cycles = <760000>;
+		qcom,fw-vpp-cycles = <166667>;
+
 		/* LLCC Info */
 		cache-slice-names = "vidsc0", "vidsc1";
 		cache-slices = <&llcc 2>, <&llcc 3>;
