@@ -25,6 +25,14 @@
 		qcom,never-unload-fw;
 		qcom,sw-power-collapse;
 		qcom,max-secure-instances = <5>;
+		qcom,max-hq-mbs-per-frame = <8160>;
+		qcom,max-hq-frames-per-sec = <60>;
+		qcom,max-b-frame-size = <8160>;
+		qcom,max-b-frames-per-sec = <60>;
+		qcom,power-collapse-delay = <1500>;
+		qcom,hw-resp-timeout = <1000>;
+		//qcom,hfi-version = <3>;
+
 		qcom,reg-presets =
 			<0x80124 0x00000003>,
 			<0x80550 0x01111111>,
