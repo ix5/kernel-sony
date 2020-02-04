@@ -144,6 +144,25 @@
 		pinctrl-names = "default", "sleep";
 		pinctrl-0 = <&msm_gpio_82_active &msm_gpio_81>;
 		pinctrl-1 = <&msm_gpio_82_suspend &msm_gpio_81>;
+
+		// TODO: Imported from loire
+		// Will this work with tlmm instead of msm_gpio?
+		qcom,msm-bus,name = "bt_bimc_ebi0";
+		qcom,msm-bus,num-cases = <2>;
+		qcom,msm-bus,num-paths = <1>;
+		/* include/dt-bindings/msm/msm-bus-ids.h
+		 *   #define	MSM_BUS_MNOC_BIMC_MAS 10027
+		 *   #define	MSM_BUS_SLAVE_FIRST 512
+		 * arch/arm64/boot/dts/qcom/msm8956.dtsi
+		 *   qcom,vph-low-threshold-uv = <3200000>;
+		 * arch/arm64/boot/dts/qcom/msm8996.dtsi
+		 *   qcom,vph-low-threshold-uv = <3300000>;
+		 * arch/arm64/boot/dts/qcom/msm8996-tone-common.dtsi
+		 *   qcom,vph-low-threshold-uv = <3200000>;
+		 */
+		qcom,msm-bus,vectors-KBps =
+			<10027  512    0      0 >,    /* No vote */
+			<10027  512 3200000 3200000>; /* Max. bandwidth */
 	};
 
 	bcm43xx {
@@ -647,7 +666,7 @@
 	qcom,bcl {
 		qcom,ibat-monitor {
 			qcom,soc-low-threshold = <5>;
-                        qcom,vph-low-threshold-uv = <3200000>;
+			qcom,vph-low-threshold-uv = <3200000>;
 		};
 	};
 
