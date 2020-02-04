@@ -327,11 +327,10 @@
 			};
 			config {
 				pins = "gpio10";
-				drive-strength = <2>; /* 8 mA */
+				drive-strength = <2>; /* 2 mA */
 				bias-pull-down; /* pull down*/
 			};
 		};
-
 
 		mdss_te_suspend: mdss_te_suspend {
 			mux {
