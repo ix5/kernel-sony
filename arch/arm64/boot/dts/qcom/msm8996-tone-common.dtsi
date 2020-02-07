@@ -354,14 +354,14 @@
 				&msm_gpio_61 &msm_gpio_62 &msm_gpio_63 &msm_gpio_69
 				&msm_gpio_73 &msm_gpio_74 &msm_gpio_75 &msm_gpio_76
 				&msm_gpio_77 &msm_gpio_78 &msm_gpio_79 &msm_gpio_81
-				&msm_gpio_82_suspend &msm_gpio_83 &msm_gpio_84
-				&msm_gpio_85 &msm_gpio_87 &msm_gpio_88 &msm_gpio_89
-				&msm_gpio_90 &msm_gpio_91 &msm_gpio_92 &msm_gpio_93
-				&msm_gpio_94 &msm_gpio_95 &msm_gpio_96 &msm_gpio_108
-				&msm_gpio_112 &msm_gpio_116 &msm_gpio_120 &msm_gpio_121
-				&msm_gpio_122 &msm_gpio_123 &msm_gpio_124 &msm_gpio_125
-				&msm_gpio_126 &msm_gpio_130 &msm_gpio_131 &msm_gpio_132
-				&msm_gpio_141 &msm_gpio_142 &msm_gpio_143>;
+				&msm_gpio_82_suspend &msm_gpio_83 &msm_gpio_85 &msm_gpio_86
+				&msm_gpio_87 &msm_gpio_88 &msm_gpio_89 &msm_gpio_90
+				&msm_gpio_91 &msm_gpio_92 &msm_gpio_93 &msm_gpio_94
+				&msm_gpio_95 &msm_gpio_96 &msm_gpio_108 &msm_gpio_112
+				&msm_gpio_116 &msm_gpio_120 &msm_gpio_121 &msm_gpio_122
+				&msm_gpio_123 &msm_gpio_124 &msm_gpio_125 &msm_gpio_126
+				&msm_gpio_130 &msm_gpio_131 &msm_gpio_132 &msm_gpio_141
+				&msm_gpio_142 &msm_gpio_143>;
 
 		/* If product common default setting is needed,
 		   fill pinctrl-1 value in <product>_common.dtsi */
@@ -655,6 +655,7 @@
 	bcmwlan_en: bcmwlan-en-1-8v {
 		pinctrl-names = "default";
 		pinctrl-0 = <&msm_gpio_84>;
+		pinctrl-1 = <&msm_gpio_84>;
 		compatible = "regulator-fixed";
 		regulator-name = "bcmwlan-en-regulator";
 		regulator-min-microvolt = <1800000>;
@@ -672,7 +673,8 @@
 		compatible = "brcm,bcm4329-fmac";
 		interrupt-parent = <&tlmm>;
 		interrupts = <79 8>; /* WL_HOST_WAKE */
-		interrupt-names = "oob-irq";
+		//interrupt-names = "oob-irq"; /* ??? */
+		interrupt-names = "host-wake"; /* BCM43xx */
 	};
 };
 
