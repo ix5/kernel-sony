@@ -436,6 +436,8 @@ static struct clk_alpha_pll mmpll2_early = {
 	.offset = 0x4100,
 	.regs = clk_alpha_pll_regs[CLK_ALPHA_PLL_TYPE_DEFAULT],
 	.vco_table = mmpll_gfx_vco,
+	//.vco_tbl = mmpll_p_vco,
+    // but is in fixup v3, so it fits
 	.num_vco = ARRAY_SIZE(mmpll_gfx_vco),
 	.clkr.hw.init = &(struct clk_init_data){
 		.name = "mmpll2_early",
@@ -448,6 +450,8 @@ static struct clk_alpha_pll mmpll2_early = {
 
 static struct clk_alpha_pll_postdiv mmpll2 = {
 	.offset = 0x4100,
+	//.offset = 0x4110,
+    //#define MMSS_MMPLL2_USER_CTL_MODE				(0X4110)
 	.regs = clk_alpha_pll_regs[CLK_ALPHA_PLL_TYPE_DEFAULT],
 	.width = 4,
 	.clkr.hw.init = &(struct clk_init_data){
@@ -593,6 +597,8 @@ static struct clk_alpha_pll mmpll8_early = {
 	.offset = 0x4130,
 	.regs = clk_alpha_pll_regs[CLK_ALPHA_PLL_TYPE_DEFAULT],
 	.vco_table = mmpll_gfx_vco,
+	//.vco_tbl = mmpll_p_vco,
+    // but is in fixup v3, so it fits
 	.num_vco = ARRAY_SIZE(mmpll_gfx_vco),
 	.clkr.hw.init = &(struct clk_init_data){
 		.name = "mmpll8_early",
@@ -605,6 +611,8 @@ static struct clk_alpha_pll mmpll8_early = {
 
 static struct clk_alpha_pll_postdiv mmpll8 = {
 	.offset = 0x4130,
+	//#define MMSS_MMPLL8_USER_CTL_MODE				(0X4140)
+	//.offset = 0x4140,
 	.regs = clk_alpha_pll_regs[CLK_ALPHA_PLL_TYPE_DEFAULT],
 	.width = 4,
 	.clkr.hw.init = &(struct clk_init_data){
@@ -647,6 +655,8 @@ static struct clk_alpha_pll mmpll9_early = {
 
 static struct clk_alpha_pll_postdiv mmpll9 = {
 	.offset = 0x4200,
+	//#define MMSS_MMPLL9_USER_CTL_MODE				(0x4210)
+	//.offset = 0x4210,
 	.regs = clk_alpha_pll_regs[CLK_ALPHA_PLL_TYPE_DEFAULT],
 	.width = 2,
 	.clkr.hw.init = &(struct clk_init_data){
@@ -711,8 +721,8 @@ static struct clk_rcg2 maxi_clk_src = {
 static const struct freq_tbl ftbl_gfx3d_clk_src[] = {
 	F( 19200000, P_XO,      1, 0, 0),
 	F(133000000, P_MMPLL0,  6, 0, 0),
-//	F(214000000, P_MMPLL8,  1, 0, 0),
-//	F(315000000, P_MMPLL8,  1, 0, 0),
+	F(214000000, P_MMPLL8,  1, 0, 0),
+	F(315000000, P_MMPLL8,  1, 0, 0),
 	F(401800000, P_MMPLL2,  1, 0, 0),
 	F(510000000, P_MMPLL2,  1, 0, 0),
 	F(560000000, P_MMPLL2,  1, 0, 0),
@@ -726,7 +736,8 @@ static struct clk_init_data gfx3d_clk_src_init_data =
 	.name = "gfx3d_clk_src",
 	.parent_names = mmss_xo_mmpll0_mmpll9_mmpll2_mmpll8_gpll0,
 	.num_parents = 6,
-	.ops = &clk_rcg2_ops,
+	//.ops = &clk_rcg2_ops,
+	.ops = &clk_gfx3d_ops,
 	.vdd_class = &vdd_gfx,
 	.flags = CLK_SET_RATE_PARENT,
 	VDD_GFX_FMAX_MAP3(SVS_MINUS, 133000000, SVS, 360000000,
@@ -3606,6 +3617,7 @@ static int gpucc_msm8996_set_vdd_class(int gpuver)
 		clk_data->rate_max[VDD_GFX_TURBO] = 624000000;
 		vdd_gfx.num_levels = VDD_GFX_TURBO + 1;
 		vdd_gpu_mx.num_levels = VDD_MX_TURBO + 1;
+		//gfx3d_clk_src.clk_nb.notifier_call = gpu_clk_notifier_cb;
 		break;
 	case GPUCC_MSM8996_PRO:
 		pr_debug("Setting MSM8996PRO GPU DVFS boundaries\n");
@@ -3617,7 +3629,11 @@ static int gpucc_msm8996_set_vdd_class(int gpuver)
 		clk_data->rate_max[VDD_GFX_TURBO] = 560000000;
 		clk_data->rate_max[VDD_GFX_TURBO_L1] = 624000000;
 		clk_data->rate_max[VDD_GFX_SUPER_TURBO] = 652800000;
-		vdd_gpu_mx.num_levels = VDD_MX_TURBO + 1;
+        // Theoretically we don't have enough speedbins (9) for SUPER_TURBO (10) ???
+		vdd_gfx.num_levels = VDD_GFX_SUPER_TURBO + 1;
+		vdd_gpu_mx.num_levels = VDD_MX_SUPER_TURBO + 1;
+		//vdd_gfx.num_levels = VDD_GFX_TURBO_L1 + 1;
+		//vdd_gpu_mx.num_levels = VDD_MX_TURBO_L1 + 1;
 		gfx3d_clk_src.clk_nb.notifier_call = gpu_clk_notifier_cb;
 		break;
 	case GPUCC_MSM8996_V3:
@@ -3629,9 +3645,12 @@ static int gpucc_msm8996_set_vdd_class(int gpuver)
 		clk_data->rate_max[VDD_GFX_NOMINAL] = 510000000;
 		clk_data->rate_max[VDD_GFX_TURBO] = 560000000;
 		clk_data->rate_max[VDD_GFX_TURBO_L1] = 624000000;
+        // Theoretically we don't have enough speedbins (8) for TURBO_L1 (9) ???
 		vdd_gfx.num_levels = VDD_GFX_TURBO_L1 + 1;
-		vdd_gpu_mx.num_levels = VDD_MX_TURBO + 1;
-		gfx3d_clk_src.clk_nb.notifier_call = gpu_clk_notifier_cb;
+		vdd_gpu_mx.num_levels = VDD_MX_TURBO_L1 + 1;
+		//vdd_gfx.num_levels = VDD_GFX_TURBO + 1;
+		//vdd_gpu_mx.num_levels = VDD_MX_TURBO + 1;
+		//gfx3d_clk_src.clk_nb.notifier_call = gpu_clk_notifier_cb;
 		break;
 	default:
 		ret = -EINVAL;

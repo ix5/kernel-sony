@@ -38,67 +38,6 @@
 	compatible = "qcom,mmcc-msm8996";
 };
 
-&clock_gpu {
-	compatible = "qcom,gpucc-msm8996-v3";
-	qcom,gfx3d_clk_src_v2-opp-handle = <&msm_gpu>;
-	qcom,gfxfreq-speedbin0 =
-		<	   0  0  0 >,
-		<  133000000  2  4 >,
-		<  214000000  3  4 >,
-		<  315000000  4  4 >,
-		<  401800000  5  5 >,
-		<  510000000  6  5 >,
-		<  560000000  7  7 >,
-		<  624000000  8  7 >;
-	qcom,gfxfreq-mx-speedbin0 =
-		<	   0  0 >,
-		<  133000000  4 >,
-		<  214000000  4 >,
-		<  315000000  4 >,
-		<  401800000  5 >,
-		<  510000000  5 >,
-		<  560000000  7 >,
-		<  624000000  7 >;
-
-	qcom,gfxfreq-speedbin1 =
-		<	   0  0  0 >,
-		<  133000000  2  4 >,
-		<  214000000  3  4 >,
-		<  315000000  4  4 >,
-		<  401800000  5  5 >,
-		<  510000000  6  5 >;
-	qcom,gfxfreq-mx-speedbin1 =
-		<	   0  0 >,
-		<  133000000  4 >,
-		<  214000000  4 >,
-		<  315000000  4 >,
-		<  401800000  5 >,
-		<  510000000  5 >;
-
-	qcom,gfxfreq-speedbin2 =
-		<          0  0  0 >,
-		<  133000000  2  4 >,
-		<  214000000  3  4 >,
-		<  315000000  4  4 >,
-		<  401800000  5  5 >,
-		<  510000000  6  5 >,
-		<  560000000  7  7 >;
-	qcom,gfxfreq-mx-speedbin2 =
-		<          0  0 >,
-		<  133000000  4 >,
-		<  214000000  4 >,
-		<  315000000  4 >,
-		<  401800000  5 >,
-		<  510000000  5 >,
-		<  560000000  7 >;
-};
-
-&gdsc_gpu_gx {
-	clock-names = "core_clk", "core_root_clk";
-	clocks = <&clock_gpu GPU_GX_GFX3D_CLK>,
-		 <&clock_gpu GFX3D_CLK_SRC>;
-};
-
 /* GPU overrides */
 &msm_gpu {
 	/* Updated chip ID */
@@ -1016,6 +955,8 @@
 
 &clock_gpu {
 	compatible = "qcom,gpucc-msm8996-pro";
+	// TODO: Speedbins only reach to TURBO_L1, not SUPER_TURBO?
+	// Or is this off-by-one-for the other speeds?
 	qcom,gfxfreq-speedbin0 =
 		<	   0  0  0 >,
 		<  133000000  2  4 >,
@@ -1055,6 +996,7 @@
 		<  510000000  5 >,
 		<  560000000  7 >,
 		<  624000000  7 >;
+
 	qcom,gfxfreq-speedbin2 =
 		<          0  0  0 >,
 		<  133000000  2  4 >,
