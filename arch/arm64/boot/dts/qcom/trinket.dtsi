@@ -419,13 +419,24 @@
 			};
 			fstab {
 				compatible = "android,fstab";
+				/*
+				Unused with dynamic partitions, /vendor becomes a logical partition instead
 				vendor {
 					compatible = "android,vendor";
 					dev = "/dev/block/platform/soc/4804000.ufshc/by-name/vendor";
 					type = "ext4";
 					mnt_flags = "ro,barrier=1,discard";
 					fsmgr_flags = "wait,slotselect,avb";
-					status = "ok";
+					//status = "ok";
+					status = "disabled";
+				};
+				*/
+				odm {
+					compatible = "android,odm";
+					dev = "/dev/block/platform/soc/4804000.ufshc/by-name/oem_a";
+					type = "ext4";
+					mnt_flags = "ro,barrier=1,discard";
+					fsmgr_flags = "wait";
 				};
 			};
 		};
