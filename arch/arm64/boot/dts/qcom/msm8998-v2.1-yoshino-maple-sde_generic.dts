@@ -53,6 +53,10 @@
 
 &sde_dsi_yoshino_panels {
 	/* Only one possible panel on PROD SoMC Maple */
+	/*
+	TODO: Duplicate?  Already defined in dsi-panel-somc-maple-sde.dtsi
+	But only for &sde_dsi_dual0_6_panel
+	*/
 	somc,bootloader-panel-detect;
 
 	/* Dual DSI single panel, clocked from MUX 0 */
