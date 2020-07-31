@@ -963,7 +963,10 @@ static int32_t msm_cci_i2c_read(struct v4l2_subdev *sd,
 
 	read_words = msm_camera_io_r_mb(cci_dev->base +
 		CCI_I2C_M0_READ_BUF_LEVEL_ADDR + master * 0x100);
+	pr_err("%s:%d INFO: read_cfg->num_byte = %d\n",
+			__func__, __LINE__, read_cfg->num_byte);
 	exp_words = ((read_cfg->num_byte / 4) + 1);
+	// TODO: Fails
 	if (read_words != exp_words) {
 		pr_err("%s:%d read_words = %d, exp words = %d\n", __func__,
 			__LINE__, read_words, exp_words);
@@ -1160,8 +1163,10 @@ static int32_t msm_cci_i2c_write_async(struct v4l2_subdev *sd,
 	CDBG("%s: %d Enter\n", __func__, __LINE__);
 
 	write_async = kzalloc(sizeof(*write_async), GFP_KERNEL);
-	if (!write_async)
+	if (!write_async) {
+		pr_err("%s: %d Couldn't allocate memory\n", __func__, __LINE__);
 		return -ENOMEM;
+	}
 
 	INIT_WORK(&write_async->work, msm_cci_write_async_helper);
 	write_async->cci_dev = cci_dev;
@@ -1814,6 +1819,7 @@ static irqreturn_t msm_cci_irq(int irq_num, void *data)
 			cci_dev->base + CCI_HALT_REQ_ADDR);
 	}
 	if (irq & CCI_IRQ_STATUS_0_I2C_M1_ERROR_BMSK) {
+		// TODO
 		pr_err("%s:%d MASTER_1 error 0x%x\n", __func__, __LINE__, irq);
 		cci_dev->cci_master_info[MASTER_1].status = -EINVAL;
 		msm_camera_io_w_mb(CCI_M1_HALT_REQ_RMSK,
@@ -1924,6 +1930,7 @@ static int32_t msm_cci_init_gpio_params(struct cci_device *cci_dev)
 
 	val_array = kzalloc(sizeof(uint32_t) * tbl_size, GFP_KERNEL);
 	if (!val_array) {
+		pr_err("%s failed %d\n", __func__, __LINE__);
 		rc = -ENOMEM;
 		goto ERROR1;
 	}
