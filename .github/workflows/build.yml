@@ -1,0 +1,64 @@
+name: Kernel CI
+
+# Controls when the action will run.
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches:
+      # TODO: Get rid of this, only run upon pull requests
+      - 71r1-github-actions
+  pull_request:
+    branches:
+      - aosp/LA.UM.7.1.r1
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  # https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idcontainer
+  kernel:
+    runs-on: ubuntu-20.04
+    container:
+      image: ghcr.io/ix5/kernel-base
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          path: kernel
+
+      - name: Clone repos
+        env:
+          GIT_CMD: "git clone --single-branch --depth=1"
+          REMOTE: "https://github.com/sonyxperiadev"
+          BASEDIR: "/srv/android"
+        run: |
+          mkdir -p $BASEDIR/kernel/sony/msm-4.14/
+          $GIT_CMD $REMOTE/device-sony-common-headers $BASEDIR/kernel/sony/msm-4.14/common-headers -b aosp/LA.UM.7.1.r1
+          # Need to remove existing dir
+          rm -rf $BASEDIR/kernel/sony/msm-4.14/kernel/techpack/audio
+          $GIT_CMD $REMOTE/kernel-techpack-audio $BASEDIR/kernel/sony/msm-4.14/kernel/techpack/audio -b aosp/LA.UM.7.1.r1
+          $GIT_CMD $REMOTE/kernel-techpack-data-kernel $BASEDIR/kernel/sony/msm-4.14/kernel/techpack/data-kernel -b aosp/LA.UM.7.1.r1
+          $GIT_CMD $REMOTE/kernel-defconfig $BASEDIR/kernel/sony/msm-4.14/kernel/arch/arm64/configs/sony -b aosp/LA.UM.7.1.r1
+          $GIT_CMD $REMOTE/vendor-qcom-opensource-wlan-fw-api $BASEDIR/kernel/sony/msm-4.14/kernel/drivers/staging/wlan-qc/fw-api -b aosp/LA.UM.8.1.r1
+          $GIT_CMD $REMOTE/vendor-qcom-opensource-wlan-qca-wifi-host-cmn $BASEDIR/kernel/sony/msm-4.14/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn -b aosp/LA.UM.8.1.r1
+          $GIT_CMD $REMOTE/vendor-qcom-opensource-wlan-qcacld-3.0 $BASEDIR/kernel/sony/msm-4.14/kernel/drivers/staging/wlan-qc/qcacld-3.0 -b aosp/LA.UM.8.1.r1
+          $GIT_CMD https://github.com/ix5/oot $BASEDIR/oot -b shared-tmp
+
+      - name: Move checked out repo to /srv/android
+        run: mv $GITHUB_WORKSPACE/kernel/ /srv/android/kernel/sony/msm-4.14/kernel
+
+        # TODO: apollo only for now
+      - name: Run kernel CI script
+        run: cd /srv/android/oot/ && /bin/bash /srv/android/oot/oot.sh -s apollo
+
+      - name: Archive kernel images
+        uses: actions/upload-artifact@v2
+        with:
+          name: boot-images
+          path: /srv/android/oot/*-boot.img
+
+      - name: Archive dtbos
+        uses: actions/upload-artifact@v2
+        with:
+          name: kernel-dtbos
+          path: /srv/android/oot/*-dtbo.img
+
