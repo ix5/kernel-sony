@@ -21,9 +21,9 @@ jobs:
       fail-fast: false # Do not stop build if one matrix strand fails
       matrix:
         device:
-          - akari
+          #- akari
           - apollo
-          - akatsuki
+          #- akatsuki
     runs-on: ubuntu-20.04
     container:
       image: ghcr.io/ix5/kernel-base
