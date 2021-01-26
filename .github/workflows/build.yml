@@ -50,7 +50,7 @@ jobs:
             $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/fw-api
             $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn
             $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qcacld-3.0
-          key: kernel-repos-4.14
+          key: kernel-repos-4.14-v2
 
       - uses: actions/cache@v2
         id: cache_output
@@ -66,11 +66,12 @@ jobs:
         continue-on-error: true
         run: |
           ls -la $GITHUB_WORKSPACE/
-          ls -la $GITHUB_WORKSPACE/*
-          ls -la $GITHUB_WORKSPACE/*.git
+          ls -la $GITHUB_WORKSPACE/* || /bin/true
+          ls -la $GITHUB_WORKSPACE/**/*.git || /bin/true
 
       - name: Clone repos
         if: steps.cache_repos.outputs.cache-hit != 'true'
+        continue-on-error: true
         run: |
           mkdir -p $KERNEL_BASEDIR/
           $GIT_CLONE $REMOTE/device-sony-common-headers $KERNEL_BASEDIR/common-headers -b aosp/LA.UM.7.1.r1
