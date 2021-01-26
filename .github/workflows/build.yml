@@ -42,30 +42,32 @@ jobs:
         id: cache_repos
         name: Cache/Restore cloned dirs
         with:
-          path: |
-            $GITHUB_WORKSPACE/common-headers
-            $GITHUB_WORKSPACE/kernel/techpack/audio
-            $GITHUB_WORKSPACE/kernel/techpack/data-kernel
-            $GITHUB_WORKSPACE/kernel/arch/arm64/configs/sony
-            $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/fw-api
-            $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn
-            $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qcacld-3.0
+          path:
+            - $GITHUB_WORKSPACE/common-headers
+            - $GITHUB_WORKSPACE/kernel/techpack/audio
+            - $GITHUB_WORKSPACE/kernel/techpack/data-kernel
+            - $GITHUB_WORKSPACE/kernel/arch/arm64/configs/sony
+            - $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/fw-api
+            - $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn
+            - $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qcacld-3.0
           key: kernel-repos-4.14
 
       - uses: actions/cache@v2
         id: cache_output
         name: Cache/Restore kernel tmp
         with:
-          path: |
-            $BASEDIR/out/kernel-414/clang
-            #$BASEDIR/out/kernel-414/clang/${{ matrix.device }}
+          path:
+            - $BASEDIR/out/kernel-414/clang
+            #- $BASEDIR/out/kernel-414/clang/${{ matrix.device }}
           key: kernel-tmp-4.14
           #key: kernel-tmp-4.14-${{ matrix.device }}
 
       - name: ls restored dirs
+        continue-on-error: true
         run: |
+          ls -la $GITHUB_WORKSPACE/
           ls -la $GITHUB_WORKSPACE/*
-          ls -la $GITHUB_WORKSPACE/.git
+          ls -la $GITHUB_WORKSPACE/*.git
 
       - name: Clone repos
         if: steps.cache_repos.outputs.cache-hit != 'true'
