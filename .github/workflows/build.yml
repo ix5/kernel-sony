@@ -25,6 +25,7 @@ jobs:
           - apollo
           #- akatsuki
     runs-on: ubuntu-20.04
+    continue-on-error: true
     container:
       image: ghcr.io/ix5/kernel-base
     env:
