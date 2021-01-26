@@ -27,6 +27,12 @@ jobs:
     runs-on: ubuntu-20.04
     container:
       image: ghcr.io/ix5/kernel-base
+    env:
+      GIT_CLONE: "git clone --single-branch --depth=1"
+      REMOTE: "https://github.com/sonyxperiadev"
+      BASEDIR: "/srv/android"
+      KERNEL_BASEDIR: "/srv/android/kernel/sony/msm-4.14"
+      ANDROID_BUILD_TOP: "/srv/android"
     steps:
       - uses: actions/checkout@v2
         with:
@@ -34,9 +40,7 @@ jobs:
 
       - uses: actions/cache@v2
         id: cache
-        name: Restore cloned dirs from cache
-        #env:
-        #  KERNEL_BASEDIR: "/srv/android/kernel/sony/msm-4.14"
+        name: Cache/Restore cloned dirs
         with:
           path: |
             $GITHUB_WORKSPACE/common-headers
@@ -49,28 +53,21 @@ jobs:
           key: kernel-repos-4.14
 
       - name: Clone repos
-        #if: steps.cache.outputs.cache-hit != 'true'
-        env:
-          GIT_CMD: "git clone --single-branch --depth=1"
-          REMOTE: "https://github.com/sonyxperiadev"
-          BASEDIR: "/srv/android"
-          KERNEL_BASEDIR: "/srv/android/kernel/sony/msm-4.14"
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p $KERNEL_BASEDIR/
-          $GIT_CMD $REMOTE/device-sony-common-headers $KERNEL_BASEDIR/common-headers -b aosp/LA.UM.7.1.r1
+          $GIT_CLONE $REMOTE/device-sony-common-headers $KERNEL_BASEDIR/common-headers -b aosp/LA.UM.7.1.r1
           # Clone submodules into workspace kernel dir first and then move whole kernel dir
           # Need to remove existing dir
           rm -rf $GITHUB_WORKSPACE/kernel/techpack/audio
-          $GIT_CMD $REMOTE/kernel-techpack-audio $GITHUB_WORKSPACE/kernel/techpack/audio -b aosp/LA.UM.7.1.r1
-          $GIT_CMD $REMOTE/kernel-techpack-data-kernel $GITHUB_WORKSPACE/kernel/techpack/data-kernel -b aosp/LA.UM.7.1.r1
-          $GIT_CMD $REMOTE/kernel-defconfig $GITHUB_WORKSPACE/kernel/arch/arm64/configs/sony -b aosp/LA.UM.7.1.r1
-          $GIT_CMD $REMOTE/vendor-qcom-opensource-wlan-fw-api $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/fw-api -b aosp/LA.UM.8.1.r1
-          $GIT_CMD $REMOTE/vendor-qcom-opensource-wlan-qca-wifi-host-cmn $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn -b aosp/LA.UM.8.1.r1
-          $GIT_CMD $REMOTE/vendor-qcom-opensource-wlan-qcacld-3.0 $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qcacld-3.0 -b aosp/LA.UM.8.1.r1
+          $GIT_CLONE $REMOTE/kernel-techpack-audio $GITHUB_WORKSPACE/kernel/techpack/audio -b aosp/LA.UM.7.1.r1
+          $GIT_CLONE $REMOTE/kernel-techpack-data-kernel $GITHUB_WORKSPACE/kernel/techpack/data-kernel -b aosp/LA.UM.7.1.r1
+          $GIT_CLONE $REMOTE/kernel-defconfig $GITHUB_WORKSPACE/kernel/arch/arm64/configs/sony -b aosp/LA.UM.7.1.r1
+          $GIT_CLONE $REMOTE/vendor-qcom-opensource-wlan-fw-api $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/fw-api -b aosp/LA.UM.8.1.r1
+          $GIT_CLONE $REMOTE/vendor-qcom-opensource-wlan-qca-wifi-host-cmn $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn -b aosp/LA.UM.8.1.r1
+          $GIT_CLONE $REMOTE/vendor-qcom-opensource-wlan-qcacld-3.0 $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qcacld-3.0 -b aosp/LA.UM.8.1.r1
 
       - name: Clone out-of-tree scripts
-        env:
-          BASEDIR: "/srv/android"
         run: git clone https://github.com/ix5/oot $BASEDIR/oot -b shared-tmp
 
       - name: Pull latest for repos
@@ -86,19 +83,15 @@ jobs:
           cd $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn && $GIT_FETCH aosp/LA.UM.8.1.r1 && $GIT_RESET origin/aosp/LA.UM.8.1.r1
           cd $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qcacld-3.0 && $GIT_FETCH aosp/LA.UM.8.1.r1 && $GIT_RESET origin/aosp/LA.UM.8.1.r1
 
-      - name: Move checked out repo to /srv/android
-        env:
-          KERNEL_BASEDIR: "/srv/android/kernel/sony/msm-4.14"
-        run: mv $GITHUB_WORKSPACE/kernel/ $KERNEL_BASEDIR/kernel
+      - name: Copy checked out repo to /srv/android
+        # Using copy instead of move so that cache hits on $GITHUB_WORKSPACE/kernel can occur
+        run: cp -r $GITHUB_WORKSPACE/kernel/ $KERNEL_BASEDIR/kernel
 
       # TEMP
       - name: TEMP Install clang
         run: apt install -y clang
 
       - name: Run kernel CI script
-        env:
-          ANDROID_BUILD_TOP: /srv/android
-          KERNEL_BASEDIR: "/srv/android/kernel/sony/msm-4.14"
         run: |
             cd /srv/android/oot/
             ls -la /srv/android/kernel/sony/msm-4.14/
