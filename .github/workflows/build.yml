@@ -17,6 +17,13 @@ on:
 jobs:
   # https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idcontainer
   kernel:
+    strategy:
+      fail-fast: false # Do not stop build if one matrix strand fails
+      matrix:
+        device:
+          - akari
+          - apollo
+          - akatsuki
     runs-on: ubuntu-20.04
     container:
       image: ghcr.io/ix5/kernel-base
@@ -30,25 +37,35 @@ jobs:
           GIT_CMD: "git clone --single-branch --depth=1"
           REMOTE: "https://github.com/sonyxperiadev"
           BASEDIR: "/srv/android"
+          KERNEL_BASEDIR: "/srv/android/kernel/sony/msm-4.14"
         run: |
-          mkdir -p $BASEDIR/kernel/sony/msm-4.14/
-          $GIT_CMD $REMOTE/device-sony-common-headers $BASEDIR/kernel/sony/msm-4.14/common-headers -b aosp/LA.UM.7.1.r1
+          mkdir -p $KERNEL_BASEDIR/
+          $GIT_CMD $REMOTE/device-sony-common-headers $KERNEL_BASEDIR/common-headers -b aosp/LA.UM.7.1.r1
+          # Clone submodules into workspace kernel dir first and then move whole kernel dir
           # Need to remove existing dir
-          rm -rf $BASEDIR/kernel/sony/msm-4.14/kernel/techpack/audio
-          $GIT_CMD $REMOTE/kernel-techpack-audio $BASEDIR/kernel/sony/msm-4.14/kernel/techpack/audio -b aosp/LA.UM.7.1.r1
-          $GIT_CMD $REMOTE/kernel-techpack-data-kernel $BASEDIR/kernel/sony/msm-4.14/kernel/techpack/data-kernel -b aosp/LA.UM.7.1.r1
-          $GIT_CMD $REMOTE/kernel-defconfig $BASEDIR/kernel/sony/msm-4.14/kernel/arch/arm64/configs/sony -b aosp/LA.UM.7.1.r1
-          $GIT_CMD $REMOTE/vendor-qcom-opensource-wlan-fw-api $BASEDIR/kernel/sony/msm-4.14/kernel/drivers/staging/wlan-qc/fw-api -b aosp/LA.UM.8.1.r1
-          $GIT_CMD $REMOTE/vendor-qcom-opensource-wlan-qca-wifi-host-cmn $BASEDIR/kernel/sony/msm-4.14/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn -b aosp/LA.UM.8.1.r1
-          $GIT_CMD $REMOTE/vendor-qcom-opensource-wlan-qcacld-3.0 $BASEDIR/kernel/sony/msm-4.14/kernel/drivers/staging/wlan-qc/qcacld-3.0 -b aosp/LA.UM.8.1.r1
+          rm -rf $GITHUB_WORKSPACE/kernel/techpack/audio
+          $GIT_CMD $REMOTE/kernel-techpack-audio $GITHUB_WORKSPACE/kernel/techpack/audio -b aosp/LA.UM.7.1.r1
+          $GIT_CMD $REMOTE/kernel-techpack-data-kernel $GITHUB_WORKSPACE/kernel/techpack/data-kernel -b aosp/LA.UM.7.1.r1
+          $GIT_CMD $REMOTE/kernel-defconfig $GITHUB_WORKSPACE/kernel/arch/arm64/configs/sony -b aosp/LA.UM.7.1.r1
+          $GIT_CMD $REMOTE/vendor-qcom-opensource-wlan-fw-api $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/fw-api -b aosp/LA.UM.8.1.r1
+          $GIT_CMD $REMOTE/vendor-qcom-opensource-wlan-qca-wifi-host-cmn $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn -b aosp/LA.UM.8.1.r1
+          $GIT_CMD $REMOTE/vendor-qcom-opensource-wlan-qcacld-3.0 $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qcacld-3.0 -b aosp/LA.UM.8.1.r1
+          # Out-of-tree scripts
           $GIT_CMD https://github.com/ix5/oot $BASEDIR/oot -b shared-tmp
 
       - name: Move checked out repo to /srv/android
-        run: mv $GITHUB_WORKSPACE/kernel/ /srv/android/kernel/sony/msm-4.14/kernel
+        env:
+          KERNEL_BASEDIR: "/srv/android/kernel/sony/msm-4.14"
+        run: mv $GITHUB_WORKSPACE/kernel/ $KERNEL_BASEDIR/kernel
 
-        # TODO: apollo only for now
       - name: Run kernel CI script
-        run: cd /srv/android/oot/ && /bin/bash /srv/android/oot/oot.sh -s apollo
+        env:
+          ANDROID_BUILD_TOP: /srv/android
+          KERNEL_BASEDIR: "/srv/android/kernel/sony/msm-4.14"
+        run: |
+            cd /srv/android/oot/
+            ls -la /srv/android/kernel/sony/msm-4.14/
+            /bin/bash /srv/android/oot/oot.sh -s ${{ matrix.device }}
 
       - name: Archive kernel images
         uses: actions/upload-artifact@v2
