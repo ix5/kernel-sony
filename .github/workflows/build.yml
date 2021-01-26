@@ -39,7 +39,7 @@ jobs:
           path: kernel
 
       - uses: actions/cache@v2
-        id: cache
+        id: cache_repos
         name: Cache/Restore cloned dirs
         with:
           path: |
@@ -52,8 +52,18 @@ jobs:
             $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qcacld-3.0
           key: kernel-repos-4.14
 
+      - uses: actions/cache@v2
+        id: cache_output
+        name: Cache/Restore kernel tmp
+        with:
+          path: |
+            $BASEDIR/out/kernel-414/clang
+            #$BASEDIR/out/kernel-414/clang/${{ matrix.device }}
+          key: kernel-tmp-4.14
+          #key: kernel-tmp-4.14-${{ matrix.device }}
+
       - name: Clone repos
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.cache_repos.outputs.cache-hit != 'true'
         run: |
           mkdir -p $KERNEL_BASEDIR/
           $GIT_CLONE $REMOTE/device-sony-common-headers $KERNEL_BASEDIR/common-headers -b aosp/LA.UM.7.1.r1
