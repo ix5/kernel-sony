@@ -88,8 +88,8 @@ jobs:
         run: cp -r $GITHUB_WORKSPACE/kernel/ $KERNEL_BASEDIR/kernel
 
       # TEMP
-      - name: TEMP Install clang
-        run: apt install -y clang
+      - name: TEMP Install clang and libc++
+        run: apt install -y clang libc++-dev
 
       - name: Run kernel CI script
         run: |
