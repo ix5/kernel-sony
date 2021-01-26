@@ -32,7 +32,25 @@ jobs:
         with:
           path: kernel
 
+      - uses: actions/cache@v2
+        id: cache
+        name: Restore cloned dirs from cache
+        #env:
+        #  KERNEL_BASEDIR: "/srv/android/kernel/sony/msm-4.14"
+        with:
+          path: |
+            $GITHUB_WORKSPACE/common-headers
+            $GITHUB_WORKSPACE/kernel/techpack/audio
+            $GITHUB_WORKSPACE/kernel/techpack/data-kernel
+            $GITHUB_WORKSPACE/kernel/arch/arm64/configs/sony
+            $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/fw-api
+            $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn
+            $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qcacld-3.0
+          # We _always_ want to try to restore dirs, but actions/cache@ needs a key
+          key: ${{ runner.os }}-repos
+
       - name: Clone repos
+        if: steps.cache.outputs.cache-hit != 'true'
         env:
           GIT_CMD: "git clone --single-branch --depth=1"
           REMOTE: "https://github.com/sonyxperiadev"
@@ -50,13 +68,33 @@ jobs:
           $GIT_CMD $REMOTE/vendor-qcom-opensource-wlan-fw-api $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/fw-api -b aosp/LA.UM.8.1.r1
           $GIT_CMD $REMOTE/vendor-qcom-opensource-wlan-qca-wifi-host-cmn $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn -b aosp/LA.UM.8.1.r1
           $GIT_CMD $REMOTE/vendor-qcom-opensource-wlan-qcacld-3.0 $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qcacld-3.0 -b aosp/LA.UM.8.1.r1
-          # Out-of-tree scripts
-          $GIT_CMD https://github.com/ix5/oot $BASEDIR/oot -b shared-tmp
+
+      - name: Clone out-of-tree scripts
+        env:
+          BASEDIR: "/srv/android"
+        run: git clone https://github.com/ix5/oot $BASEDIR/oot -b shared-tmp
+
+      - name: Pull latest for repos
+        env:
+          GIT_FETCH: "git fetch origin"
+          GIT_RESET: "git reset --hard origin"
+        run: |
+          cd $GITHUB_WORKSPACE/common-headers && $GIT_FETCH aosp/LA.UM.7.1.r1 && $GIT_RESET origin/aosp/LA.UM.7.1.r1
+          cd $GITHUB_WORKSPACE/kernel/techpack/audio && $GIT_FETCH aosp/LA.UM.7.1.r1 && $GIT_RESET origin/aosp/LA.UM.7.1.r1
+          cd $GITHUB_WORKSPACE/kernel/techpack/data-kernel && $GIT_FETCH aosp/LA.UM.7.1.r1 && $GIT_RESET origin/aosp/LA.UM.7.1.r1
+          cd $GITHUB_WORKSPACE/kernel/arch/arm64/configs/sony && $GIT_FETCH aosp/LA.UM.7.1.r1 && $GIT_RESET origin/aosp/LA.UM.7.1.r1
+          cd $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/fw-api && $GIT_FETCH aosp/LA.UM.8.1.r1 && $GIT_RESET origin/aosp/LA.UM.8.1.r1
+          cd $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn && $GIT_FETCH aosp/LA.UM.8.1.r1 && $GIT_RESET origin/aosp/LA.UM.8.1.r1
+          cd $GITHUB_WORKSPACE/kernel/drivers/staging/wlan-qc/qcacld-3.0 && $GIT_FETCH aosp/LA.UM.8.1.r1 && $GIT_RESET origin/aosp/LA.UM.8.1.r1
 
       - name: Move checked out repo to /srv/android
         env:
           KERNEL_BASEDIR: "/srv/android/kernel/sony/msm-4.14"
         run: mv $GITHUB_WORKSPACE/kernel/ $KERNEL_BASEDIR/kernel
+
+      # TEMP
+      - name: TEMP Install clang
+        run: apt install -y clang
 
       - name: Run kernel CI script
         env:
