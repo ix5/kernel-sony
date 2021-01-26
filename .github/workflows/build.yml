@@ -25,7 +25,6 @@ jobs:
           - apollo
           #- akatsuki
     runs-on: ubuntu-20.04
-    continue-on-error: true
     container:
       image: ghcr.io/ix5/kernel-base
     env:
@@ -99,11 +98,12 @@ jobs:
         # Using copy instead of move so that cache hits on $GITHUB_WORKSPACE/kernel can occur
         run: cp -r $GITHUB_WORKSPACE/kernel/ $KERNEL_BASEDIR/kernel
 
-      # TEMP
-      - name: TEMP Install clang and libc++
-        run: apt install -y clang libc++-dev
+      # TEMP until image is rebuilt
+      - name: TEMP Install clang
+        run: apt install -y clang
 
       - name: Run kernel CI script
+        continue-on-error: true
         run: |
             cd /srv/android/oot/
             ls -la /srv/android/kernel/sony/msm-4.14/
