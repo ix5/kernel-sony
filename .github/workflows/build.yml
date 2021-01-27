@@ -84,6 +84,8 @@ jobs:
 
       - name: Clone kernel repo
         if: steps.cache_kernel_repo.outputs.cache-hit != 'true'
+        env:
+          GIT_FETCH: "git fetch --depth=1 origin"
         run: |
           mkdir -p $KERNEL_BASEDIR/
           # First, checkout base branch (since refs/* not available for clone directly)
@@ -95,7 +97,7 @@ jobs:
           git remote rename origin sony
           # Then add fork as "origin"
           git remote add origin https://github.com/${{ github.repository }}
-          git fetch origin ${{ github.ref }}
+          $GIT_FETCH ${{ github.ref }}
           git checkout remotes/origin/$(echo ${{ github.ref }} | sed 's|refs/heads/||')
           # Need to remove existing dir
           rm -rf $KERNEL_BASEDIR/kernel/techpack/audio
@@ -131,7 +133,7 @@ jobs:
       - name: Reset kernel to ref of this run
         if: steps.cache_kernel_repo.outputs.cache-hit == 'true'
         env:
-          GIT_FETCH: "git fetch origin"
+          GIT_FETCH: "git fetch --depth=1 origin"
           GIT_RESET: "git reset --hard"
         run: |
           cd $KERNEL_BASEDIR/kernel
@@ -142,7 +144,7 @@ jobs:
       - name: Pull latest for repos
         if: steps.cache_repos.outputs.cache-hit == 'true'
         env:
-          GIT_FETCH: "git fetch origin"
+          GIT_FETCH: "git fetch --depth=1 origin"
           GIT_RESET: "git reset --hard"
         run: |
           cd $KERNEL_BASEDIR/kernel/techpack/audio && $GIT_FETCH $KERNEL_BASE_BRANCH && $GIT_RESET origin/$KERNEL_BASE_BRANCH
