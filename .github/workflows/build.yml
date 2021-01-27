@@ -25,7 +25,7 @@ jobs:
         device:
           #- akari
           - apollo
-          #- akatsuki
+          - akatsuki
     runs-on: ubuntu-20.04
     container:
       image: ghcr.io/ix5/kernel-base
