@@ -53,7 +53,7 @@ jobs:
             !${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/fw-api
             !${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn
             !${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/qcacld-3.0
-          key: kernel-source-${{ env.KERNEL_VERSION }}-${{ github.sha }}
+          key: kernel-source-${{ env.KERNEL_VERSION }}-sha-${{ github.sha }}
           restore-keys: |
             kernel-source-${{ env.KERNEL_VERSION }}-sha-
 
@@ -68,7 +68,7 @@ jobs:
             ${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/fw-api
             ${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn
             ${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/qcacld-3.0
-          key: kernel-repos-${{ env.KERNEL_VERSION }}-${{ github.sha }}
+          key: kernel-repos-${{ env.KERNEL_VERSION }}-sha-${{ github.sha }}
           restore-keys: |
             kernel-repos-${{ env.KERNEL_VERSION }}-sha-
 
