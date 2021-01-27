@@ -23,7 +23,7 @@ jobs:
         device:
           #- akari
           - apollo
-          #- akatsuki
+          - akatsuki
     runs-on: ubuntu-20.04
     container:
       image: ghcr.io/ix5/kernel-base
@@ -35,11 +35,6 @@ jobs:
       KERNEL_BASEDIR: "/srv/android/kernel/sony/msm-4.14"
       ANDROID_BUILD_TOP: "/srv/android"
     steps:
-
-      - name: echo github sha and exit
-        run: |
-          echo "no env: $GITHUB_SHA"
-
       - uses: actions/checkout@v2
         with:
           path: kernel
@@ -78,13 +73,6 @@ jobs:
           ls -la $BASEDIR/out/kernel-$KERNEL_VERSION/clang
           # Let wildcard be interpreted by target shell:
           /bin/bash 'ls -la $BASEDIR/out/kernel-4.14/clang/*'
-
-      #- name: ls restored dirs
-      #  continue-on-error: true
-      #  run: |
-      #    ls -la $GITHUB_WORKSPACE/
-      #    /bin/bash 'ls -la $GITHUB_WORKSPACE/*' || /bin/true
-      #    /bin/bash 'ls -la $GITHUB_WORKSPACE/**/*.git' || /bin/true
 
       - name: Clone repos
         #if: steps.cache_repos.outputs.cache-hit != 'true'
@@ -134,8 +122,8 @@ jobs:
         run: cp -r $GITHUB_WORKSPACE/kernel/ $KERNEL_BASEDIR/kernel
 
       # TEMP until image is rebuilt
-      - name: TEMP Install python
-        run: apt install -y python
+      #- name: TEMP Install python
+      #  run: apt install -y python
 
       - name: Run kernel CI script
         continue-on-error: true
