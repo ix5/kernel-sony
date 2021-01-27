@@ -92,13 +92,14 @@ jobs:
           # > fatal: Remote branch refs/heads/71r1-github-actions not found in upstream origin
           # Note: Using sonyxperiadev as origin since $KERNEL_BASE_BRANCH might not exist on fork
           $GIT_CLONE $REMOTE/kernel $KERNEL_BASEDIR/kernel -b $KERNEL_BASE_BRANCH
+          cd $KERNEL_BASEDIR/kernel
           git remote rename origin sony
           # Then add fork as "origin"
           git remote add origin https://github.com/${{ github.repository }}
           git fetch origin ${{ github.ref }}
           git checkout remotes/origin/$(echo ${{ github.ref }} | sed 's|refs/heads/||')
           # Don't forget this...
-          rm -rf $GITHUB_WORKSPACE/kernel/techpack/audio
+          rm -rf $KERNEL_BASEDIR/kernel/techpack/audio
 
       - name: ls restored kernel dirs and fail
         continue-on-error: true
@@ -118,7 +119,7 @@ jobs:
         run: |
           mkdir -p $KERNEL_BASEDIR/
           # Need to remove existing dir
-          rm -rf $GITHUB_WORKSPACE/kernel/techpack/audio
+          rm -rf $KERNEL_BASEDIR/kernel/techpack/audio
           $GIT_CLONE $REMOTE/kernel-techpack-audio $KERNEL_BASEDIR/kernel/techpack/audio -b $KERNEL_BASE_BRANCH
           $GIT_CLONE $REMOTE/kernel-techpack-data-kernel $KERNEL_BASEDIR/kernel/techpack/data-kernel -b $KERNEL_BASE_BRANCH
           $GIT_CLONE $REMOTE/kernel-defconfig $KERNEL_BASEDIR/kernel/arch/arm64/configs/sony -b $KERNEL_BASE_BRANCH
@@ -140,7 +141,7 @@ jobs:
           $GIT_FETCH ${{ github.ref }}
           $GIT_RESET origin/$(echo ${{ github.ref }} | sed 's|refs/heads/||')
           # Don't forget this...
-          rm -rf $GITHUB_WORKSPACE/kernel/techpack/audio
+          rm -rf $KERNEL_BASEDIR/kernel/techpack/audio
         shell: bash
 
       - name: Pull latest for repos
@@ -169,8 +170,8 @@ jobs:
           git clone https://github.com/ix5/sodp-ramdisks -b aosp-10 $BASEDIR/out/target/product
 
       #- name: Copy checked out repo to /srv/android
-      #  # Using copy instead of move so that cache hits on $GITHUB_WORKSPACE/kernel can occur
-      #  run: cp -r $GITHUB_WORKSPACE/kernel/ $KERNEL_BASEDIR/kernel
+      #  # Using copy instead of move so that cache hits on $KERNEL_BASEDIR/kernel can occur
+      #  run: cp -r $KERNEL_BASEDIR/kernel/ $KERNEL_BASEDIR/kernel
 
       # TEMP until image is rebuilt
       #- name: TEMP Install python
