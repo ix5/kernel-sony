@@ -23,7 +23,7 @@ jobs:
         device:
           #- akari
           - apollo
-          - akatsuki
+          #- akatsuki
     runs-on: ubuntu-20.04
     container:
       image: ghcr.io/ix5/kernel-base
@@ -69,12 +69,15 @@ jobs:
           restore-keys: |
             kernel-tmp-${{ env.KERNEL_VERSION }}-sha-
 
-      - name: ls restored kernel dirs
-        continue-on-error: true
+      - name: ls restored kernel dirs and fail
+        #continue-on-error: true
         run: |
           ls -la $BASEDIR/out/ || /bin/true
           ls -la $BASEDIR/out/kernel-$KERNEL_VERSION/ || /bin/true
-          ls -la $BASEDIR/out/kernel-$KERNEL_VERSION/clang
+          ls -la $BASEDIR/out/kernel-$KERNEL_VERSION/clang || /bin/true
+          ls -la $KERNEL_BASEDIR || /bin/true
+          ls -la $KERNEL_BASEDIR/kernel || /bin/true
+          /bin/false
 
       - name: Clone repos
         #if: steps.cache_repos.outputs.cache-hit != 'true'
