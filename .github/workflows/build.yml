@@ -97,7 +97,7 @@ jobs:
           git remote add origin https://github.com/${{ github.repository }}
           git fetch origin ${{ github.ref }}
           git checkout remotes/origin/$(echo ${{ github.ref }} | sed 's|refs/heads/||')
-          # Don't forget this...
+          # Need to remove existing dir
           rm -rf $KERNEL_BASEDIR/kernel/techpack/audio
 
       - name: DEBUG Output restored dirs
@@ -137,8 +137,6 @@ jobs:
           cd $KERNEL_BASEDIR/kernel
           $GIT_FETCH ${{ github.ref }}
           $GIT_RESET origin/$(echo ${{ github.ref }} | sed 's|refs/heads/||')
-          # Don't forget this...
-          rm -rf $KERNEL_BASEDIR/kernel/techpack/audio
         shell: bash
 
       - name: Pull latest for repos
