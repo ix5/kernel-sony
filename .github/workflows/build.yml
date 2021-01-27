@@ -61,8 +61,10 @@ jobs:
           path: |
             $BASEDIR/out/kernel-$KERNEL_VERSION/clang
             #- $BASEDIR/out/kernel-414/clang/${{ matrix.device }}
-          key: kernel-tmp-$KERNEL_VERSION-v5
+          key: kernel-tmp-$KERNEL_VERSION-sha-$GITHUB_SHA
           #key: kernel-tmp-$KERNEL_VERSION-${{ matrix.device }}
+          restore-keys: |
+            kernel-tmp-$KERNEL_VERSION-sha-
 
       - name: ls restored kernel dirs
         continue-on-error: true
