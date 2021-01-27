@@ -59,12 +59,12 @@ jobs:
         name: Cache/Restore kernel tmp
         with:
           path: |
-            $BASEDIR/out/kernel-$KERNEL_VERSION/clang
+            ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/clang
             #- $BASEDIR/out/kernel-414/clang/${{ matrix.device }}
-          key: kernel-tmp-$KERNEL_VERSION-sha-$GITHUB_SHA
+          key: kernel-tmp-${{ env.KERNEL_VERSION }}-sha-${{ env.GITHUB_SHA }}
           #key: kernel-tmp-$KERNEL_VERSION-${{ matrix.device }}
           restore-keys: |
-            kernel-tmp-$KERNEL_VERSION-sha-
+            kernel-tmp-${{ env.KERNEL_VERSION }}-sha-
 
       - name: ls restored kernel dirs
         continue-on-error: true
