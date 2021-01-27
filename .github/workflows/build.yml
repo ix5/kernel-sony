@@ -41,39 +41,6 @@ jobs:
     ### Steps ###
     steps:
 
-      # FIXME Remove
-      - name: Cache/Restore kernel source repo
-        id: cache_kernel_repo
-        uses: actions/cache@v2
-        with:
-          path: |
-            ${{ env.KERNEL_BASEDIR }}/kernel
-            !${{ env.KERNEL_BASEDIR }}/kernel/techpack/audio
-            !${{ env.KERNEL_BASEDIR }}/kernel/techpack/data-kernel
-            !${{ env.KERNEL_BASEDIR }}/kernel/arch/arm64/configs/sony
-            !${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/fw-api
-            !${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn
-            !${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/qcacld-3.0
-          key: kernel-source-${{ env.KERNEL_VERSION }}-sha-27aa9bc2962c646355f285ac105c7b5298c3b7e4
-          restore-keys: |
-            kernel-source-${{ env.KERNEL_VERSION }}-sha-
-
-      # FIXME Remove
-      - name: Cache/Restore kernel sub-repos
-        id: cache_repos
-        uses: actions/cache@v2
-        with:
-          path: |
-            ${{ env.KERNEL_BASEDIR }}/kernel/techpack/audio
-            ${{ env.KERNEL_BASEDIR }}/kernel/techpack/data-kernel
-            ${{ env.KERNEL_BASEDIR }}/kernel/arch/arm64/configs/sony
-            ${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/fw-api
-            ${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn
-            ${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/qcacld-3.0
-          key: kernel-repos-${{ env.KERNEL_VERSION }}-sha-27aa9bc2962c646355f285ac105c7b5298c3b7e4
-          restore-keys: |
-            kernel-repos-${{ env.KERNEL_VERSION }}-sha-
-
       - name: Cache/Restore kernel source repos
         id: cache_kernel_repos
         uses: actions/cache@v2
@@ -83,22 +50,6 @@ jobs:
           key: kernel-sources-${{ env.KERNEL_VERSION }}-sha-${{ github.sha }}
           restore-keys: |
             kernel-sources-${{ env.KERNEL_VERSION }}-sha-
-
-      # FIXME Remove
-      #- name: Cache/Restore kernel sub-repos
-      #  id: cache_repos
-      #  uses: actions/cache@v2
-      #  with:
-      #    path: |
-      #      ${{ env.KERNEL_BASEDIR }}/kernel/techpack/audio
-      #      ${{ env.KERNEL_BASEDIR }}/kernel/techpack/data-kernel
-      #      ${{ env.KERNEL_BASEDIR }}/kernel/arch/arm64/configs/sony
-      #      ${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/fw-api
-      #      ${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn
-      #      ${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/qcacld-3.0
-      #    key: kernel-repos-${{ env.KERNEL_VERSION }}-sha-${{ github.sha }}
-      #    restore-keys: |
-      #      kernel-repos-${{ env.KERNEL_VERSION }}-sha-
 
       - name: Cache/Restore kernel tmp
         id: cache_kernel_tmp
@@ -136,18 +87,6 @@ jobs:
           # Need to remove existing dir
           rm -rf $KERNEL_BASEDIR/kernel/techpack/audio
         shell: bash
-
-      - name: "[DEBUG] --- Output restored dirs"
-        continue-on-error: true
-        run: |
-          ls -la $BASEDIR/out/ || /bin/true
-          ls -la $BASEDIR/out/kernel-$KERNEL_VERSION/ || /bin/true
-          ls -la $BASEDIR/out/kernel-$KERNEL_VERSION/clang || /bin/true
-          ls -la $KERNEL_BASEDIR || /bin/true
-          ls -la $KERNEL_BASEDIR/kernel || /bin/true
-          ls -la $KERNEL_BASEDIR/kernel/techpack || /bin/true
-          ls -la $KERNEL_BASEDIR/kernel/techpack/audio || /bin/true
-          ( cd $KERNEL_BASEDIR/kernel && git status && git remote -vvv ) || /bin/true
 
       - name: Clone kernel sub-repos
         # Note: cache-hit is set to 'false' if restore-keys is invoked!
