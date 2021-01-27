@@ -37,9 +37,22 @@ jobs:
       KERNEL_BASE_BRANCH: "aosp/LA.UM.7.1.r1"
       KERNEL_BASEDIR: "/srv/android/kernel/sony/msm-4.14"
       ANDROID_BUILD_TOP: "/srv/android"
+      COMPILER: "clang"
 
     ### Steps ###
     steps:
+
+      - name: Get date - Current day
+        id: get-date-day
+        run: |
+          echo "::set-output name=date::$(/bin/date -u "+%Y-%m-%d")"
+        shell: bash
+
+      - name: Get date - Current month
+        id: get-date-month
+        run: |
+          echo "::set-output name=date::$(/bin/date -u "+%Y-%m")"
+        shell: bash
 
       - name: Cache access for Kernel source repos
         id: cache_kernel_repos
@@ -47,8 +60,12 @@ jobs:
         with:
           path: |
             ${{ env.KERNEL_BASEDIR }}/kernel
-          key: kernel-sources-${{ env.KERNEL_VERSION }}-sha-${{ github.sha }}
+          # Save caches once per day
+          key: kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.date }}
           restore-keys: |
+            kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date-day.outputs.date }}
+            kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date-month.outputs.date }}
+            # Legacy:
             kernel-sources-${{ env.KERNEL_VERSION }}-sha-
 
       - name: Cache access for Kernel output dir
@@ -56,9 +73,13 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/clang
-          key: kernel-tmp-${{ env.KERNEL_VERSION }}-sha-${{ github.sha }}
+            ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/$COMPILER
+          # Save caches once per day
+          key: kernel-tmp-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.date }}
           restore-keys: |
+            kernel-tmp-${{ env.KERNEL_VERSION }}-${{ steps.get-date-day.outputs.date }}
+            kernel-tmp-${{ env.KERNEL_VERSION }}-${{ steps.get-date-month.outputs.date }}
+            # Legacy:
             kernel-tmp-${{ env.KERNEL_VERSION }}-sha-
 
       - name: Clone kernel repo
@@ -71,7 +92,7 @@ jobs:
           GIT_FETCH: "git fetch --depth=1 origin"
         run: |
           # Abort if already cloned
-          [ -d $KERNEL_BASEDIR/kernel/.git ] && cd $KERNEL_BASEDIR/kernel && git status && exit 0
+          [ -d $KERNEL_BASEDIR/kernel/.git ] && && exit 0
           mkdir -p $KERNEL_BASEDIR/
           # First, checkout base branch (since refs/* not available for clone directly)
           # > warning: Could not find remote branch refs/heads/71r1-github-actions to clone.
@@ -164,10 +185,10 @@ jobs:
       - name: Cleanup intermediates before saving caches
         continue-on-error: true
         run: |
-          rm -f ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/clang/vmlinux
-          rm -f ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/clang/vmlinux.o
-          rm -f ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/clang/.tmp_vmlinux1
-          rm -f ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/clang/.tmp_vmlinux2
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/vmlinux
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/vmlinux.o
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/.tmp_vmlinux1
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/.tmp_vmlinux2
 
       - name: Archive kernel images
         uses: actions/upload-artifact@v2
