@@ -35,6 +35,13 @@ jobs:
       KERNEL_BASEDIR: "/srv/android/kernel/sony/msm-4.14"
       ANDROID_BUILD_TOP: "/srv/android"
     steps:
+
+      - name: echo github sha and exit
+        run: |
+          echo "env: ${{ env.GITHUB_SHA }}"
+          echo "no env: $GITHUB_SHA"
+          /bin/false
+
       - uses: actions/checkout@v2
         with:
           path: kernel
