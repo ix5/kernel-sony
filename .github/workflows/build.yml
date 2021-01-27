@@ -92,7 +92,7 @@ jobs:
           # > fatal: Remote branch refs/heads/71r1-github-actions not found in upstream origin
           $GIT_CLONE https://github.com/${{ github.repository }} $KERNEL_BASEDIR/kernel -b $KERNEL_BASE_BRANCH
           git fetch origin ${{ github.ref }}
-          git checkout remotes/origin/${{ github.ref }}
+          git checkout remotes/origin/$(echo ${{ github.ref }} | sed 's|refs/heads/||')
           #$GIT_RESET origin/$(echo ${{ github.ref }} | sed 's|refs/heads/||')
 
       - name: ls restored kernel dirs and fail
