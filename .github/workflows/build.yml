@@ -97,7 +97,8 @@ jobs:
           git remote add origin https://github.com/${{ github.repository }}
           git fetch origin ${{ github.ref }}
           git checkout remotes/origin/$(echo ${{ github.ref }} | sed 's|refs/heads/||')
-          #$GIT_RESET origin/$(echo ${{ github.ref }} | sed 's|refs/heads/||')
+          # Don't forget this...
+          rm -rf $GITHUB_WORKSPACE/kernel/techpack/audio
 
       - name: ls restored kernel dirs and fail
         continue-on-error: true
@@ -107,6 +108,8 @@ jobs:
           ls -la $BASEDIR/out/kernel-$KERNEL_VERSION/clang || /bin/true
           ls -la $KERNEL_BASEDIR || /bin/true
           ls -la $KERNEL_BASEDIR/kernel || /bin/true
+          ls -la $KERNEL_BASEDIR/kernel/techpack || /bin/true
+          ls -la $KERNEL_BASEDIR/kernel/techpack/audio || /bin/true
           ( cd $KERNEL_BASEDIR/kernel && git status && git remote -vvv ) || /bin/true
 
       - name: Clone repos
@@ -136,6 +139,8 @@ jobs:
           cd $KERNEL_BASEDIR/kernel
           $GIT_FETCH ${{ github.ref }}
           $GIT_RESET origin/$(echo ${{ github.ref }} | sed 's|refs/heads/||')
+          # Don't forget this...
+          rm -rf $GITHUB_WORKSPACE/kernel/techpack/audio
         shell: bash
 
       - name: Pull latest for repos
