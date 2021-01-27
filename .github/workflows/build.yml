@@ -34,8 +34,6 @@ jobs:
       KERNEL_VERSION: "4.14"
       KERNEL_BASEDIR: "/srv/android/kernel/sony/msm-4.14"
       ANDROID_BUILD_TOP: "/srv/android"
-      # cache action is dumb and can't access env.GITHUB_* unless explicitly set here?
-      GITHUB_SHA: "$GITHUB_SHA"
     steps:
 
       - name: echo github sha and exit
@@ -68,7 +66,7 @@ jobs:
           path: |
             ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/clang
             #- $BASEDIR/out/kernel-414/clang/${{ matrix.device }}
-          key: kernel-tmp-${{ env.KERNEL_VERSION }}-sha-${{ env.GITHUB_SHA }}
+          key: kernel-tmp-${{ env.KERNEL_VERSION }}-sha-${{ github.sha }}
           #key: kernel-tmp-$KERNEL_VERSION-${{ matrix.device }}
           restore-keys: |
             kernel-tmp-${{ env.KERNEL_VERSION }}-sha-
@@ -78,6 +76,7 @@ jobs:
         run: |
           ls -la $BASEDIR/out/
           ls -la $BASEDIR/out/kernel-$KERNEL_VERSION/clang
+          # Let wildcard be interpreted by target shell:
           /bin/bash 'ls -la $BASEDIR/out/kernel-4.14/clang/*'
 
       #- name: ls restored dirs
@@ -142,8 +141,8 @@ jobs:
         continue-on-error: true
         run: |
             cd /srv/android/oot/
-            ls -la /srv/android/kernel/sony/msm-$KERNEL_VERSION/
-            /bin/bash /srv/android/oot/oot.sh -s ${{ matrix.device }}
+            /srv/android/oot/oot.sh -s ${{ matrix.device }}
+        shell: bash
 
       - name: Archive kernel images
         uses: actions/upload-artifact@v2
