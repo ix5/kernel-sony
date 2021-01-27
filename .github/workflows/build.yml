@@ -28,7 +28,7 @@ jobs:
           - akatsuki
     runs-on: ubuntu-20.04
     container:
-      image: ghcr.io/ix5/kernel-base
+      image: ghcr.io/ix5/kernel-base:dev
     env:
       GIT_CLONE: "git clone --single-branch --depth=1"
       REMOTE: "https://github.com/sonyxperiadev"
