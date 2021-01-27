@@ -41,34 +41,6 @@ jobs:
     ### Steps ###
     steps:
 
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
-        run: echo "$GITHUB_CONTEXT"
-      - name: Dump job context
-        env:
-          JOB_CONTEXT: ${{ toJSON(job) }}
-        run: echo "$JOB_CONTEXT"
-      - name: Dump steps context
-        env:
-          STEPS_CONTEXT: ${{ toJSON(steps) }}
-        run: echo "$STEPS_CONTEXT"
-      - name: Dump runner context
-        env:
-          RUNNER_CONTEXT: ${{ toJSON(runner) }}
-        run: echo "$RUNNER_CONTEXT"
-      - name: Dump strategy context
-        env:
-          STRATEGY_CONTEXT: ${{ toJSON(strategy) }}
-        run: echo "$STRATEGY_CONTEXT"
-      - name: Dump matrix context
-        env:
-          MATRIX_CONTEXT: ${{ toJSON(matrix) }}
-        run: echo "$MATRIX_CONTEXT"
-
-      - name: FAIL
-        run: /bin/false
-
       - uses: actions/cache@v2
         id: cache_kernel_repo
         name: Cache/Restore kernel source repo
@@ -120,8 +92,8 @@ jobs:
           # > fatal: Remote branch refs/heads/71r1-github-actions not found in upstream origin
           $GIT_CLONE https://github.com/${{ github.repository }} $KERNEL_BASEDIR/kernel -b $KERNEL_BASE_BRANCH
           git fetch origin ${{ github.ref }}
-          # TODO: Is base_ref the right one?
-          git checkout remotes/origin/${{ github.base_ref }}
+          git checkout remotes/origin/${{ github.ref }}
+          #$GIT_RESET origin/$(echo ${{ github.ref }} | sed 's|refs/heads/||')
 
       - name: ls restored kernel dirs and fail
         continue-on-error: true
@@ -159,7 +131,11 @@ jobs:
         run: |
           cd $KERNEL_BASEDIR/kernel
           $GIT_FETCH ${{ github.ref }}
-          $GIT_RESET origin/${{ github.ref }}
+          $GIT_RESET origin/$(echo ${{ github.ref }} | sed 's|refs/heads/||')
+        shell: bash
+
+      - name: FAIL
+        run: /bin/false
 
       - name: Pull latest for repos
         if: steps.cache_repos.outputs.cache-hit == 'true'
