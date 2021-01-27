@@ -60,7 +60,7 @@ jobs:
           path: |
             $BASEDIR/out/kernel-414/clang
             #- $BASEDIR/out/kernel-414/clang/${{ matrix.device }}
-          key: kernel-tmp-4.14-v2
+          key: kernel-tmp-4.14-v3
           #key: kernel-tmp-4.14-${{ matrix.device }}
 
       - name: ls restored kernel dirs
