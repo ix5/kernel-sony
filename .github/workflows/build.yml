@@ -31,6 +31,7 @@ jobs:
       GIT_CLONE: "git clone --single-branch --depth=1"
       REMOTE: "https://github.com/sonyxperiadev"
       BASEDIR: "/srv/android"
+      KERNEL_VERSION: "4.14"
       KERNEL_BASEDIR: "/srv/android/kernel/sony/msm-4.14"
       ANDROID_BUILD_TOP: "/srv/android"
     steps:
@@ -58,17 +59,17 @@ jobs:
         name: Cache/Restore kernel tmp
         with:
           path: |
-            $BASEDIR/out/kernel-414/clang
+            $BASEDIR/out/kernel-$KERNEL_VERSION/clang
             #- $BASEDIR/out/kernel-414/clang/${{ matrix.device }}
-          key: kernel-tmp-4.14-v4
-          #key: kernel-tmp-4.14-${{ matrix.device }}
+          key: kernel-tmp-$KERNEL_VERSION-v5
+          #key: kernel-tmp-$KERNEL_VERSION-${{ matrix.device }}
 
       - name: ls restored kernel dirs
         continue-on-error: true
         run: |
           ls -la $BASEDIR/out/
-          ls -la $BASEDIR/out/kernel-414/clang
-          /bin/bash 'ls -la $BASEDIR/out/kernel-414/clang/*'
+          ls -la $BASEDIR/out/kernel-$KERNEL_VERSION/clang
+          /bin/bash 'ls -la $BASEDIR/out/kernel-4.14/clang/*'
 
       #- name: ls restored dirs
       #  continue-on-error: true
@@ -132,7 +133,7 @@ jobs:
         continue-on-error: true
         run: |
             cd /srv/android/oot/
-            ls -la /srv/android/kernel/sony/msm-4.14/
+            ls -la /srv/android/kernel/sony/msm-$KERNEL_VERSION/
             /bin/bash /srv/android/oot/oot.sh -s ${{ matrix.device }}
 
       - name: Archive kernel images
