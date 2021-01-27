@@ -41,9 +41,9 @@ jobs:
     ### Steps ###
     steps:
 
-      - uses: actions/cache@v2
+      - name: Cache/Restore kernel source repo
         id: cache_kernel_repo
-        name: Cache/Restore kernel source repo
+        uses: actions/cache@v2
         with:
           path: |
             ${{ env.KERNEL_BASEDIR }}/kernel
@@ -57,9 +57,9 @@ jobs:
           restore-keys: |
             kernel-source-${{ env.KERNEL_VERSION }}-sha-
 
-      - uses: actions/cache@v2
+      - name: Cache/Restore kernel sub-repos
         id: cache_repos
-        name: Cache/Restore kernel sub-repos
+        uses: actions/cache@v2
         with:
           path: |
             ${{ env.KERNEL_BASEDIR }}/kernel/techpack/audio
@@ -72,9 +72,9 @@ jobs:
           restore-keys: |
             kernel-repos-${{ env.KERNEL_VERSION }}-sha-
 
-      - uses: actions/cache@v2
+      - name: Cache/Restore kernel tmp
         id: cache_kernel_tmp
-        name: Cache/Restore kernel tmp
+        uses: actions/cache@v2
         with:
           path: |
             ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/clang
@@ -83,10 +83,16 @@ jobs:
             kernel-tmp-${{ env.KERNEL_VERSION }}-sha-
 
       - name: Clone kernel repo
-        if: steps.cache_kernel_repo.outputs.cache-hit != 'true'
+        # Note: cache-hit is set to 'false' if restore-keys is invoked!
+        # So this check is useless:
+        #if: steps.cache_kernel_repo.outputs.cache-hit != 'true'
+        # Instead, check if repo already exists and "fail"
+        continue-on-error: true
         env:
           GIT_FETCH: "git fetch --depth=1 origin"
         run: |
+          # Abort if already cloned
+          "[ -d $KERNEL_BASEDIR/kernel/.git ] && /bin/false"
           mkdir -p $KERNEL_BASEDIR/
           # First, checkout base branch (since refs/* not available for clone directly)
           # > warning: Could not find remote branch refs/heads/71r1-github-actions to clone.
@@ -101,6 +107,7 @@ jobs:
           git checkout remotes/origin/$(echo ${{ github.ref }} | sed 's|refs/heads/||')
           # Need to remove existing dir
           rm -rf $KERNEL_BASEDIR/kernel/techpack/audio
+        shell: bash
 
       - name: DEBUG Output restored dirs
         continue-on-error: true
@@ -115,8 +122,14 @@ jobs:
           ( cd $KERNEL_BASEDIR/kernel && git status && git remote -vvv ) || /bin/true
 
       - name: Clone repos
-        if: steps.cache_repos.outputs.cache-hit != 'true'
+        # Note: cache-hit is set to 'false' if restore-keys is invoked!
+        # So this check is useless:
+        #if: steps.cache_repos.outputs.cache-hit != 'true'
+        # Instead, check if repo already exists and "fail"
+        continue-on-error: true
         run: |
+          # Abort if already cloned
+          "[ -d $KERNEL_BASEDIR/kernel/techpack/audio/.git ] && /bin/false"
           mkdir -p $KERNEL_BASEDIR/
           # Need to remove existing dir
           rm -rf $KERNEL_BASEDIR/kernel/techpack/audio
@@ -126,12 +139,16 @@ jobs:
           $GIT_CLONE $REMOTE/vendor-qcom-opensource-wlan-fw-api $KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/fw-api -b aosp/LA.UM.8.1.r1
           $GIT_CLONE $REMOTE/vendor-qcom-opensource-wlan-qca-wifi-host-cmn $KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn -b aosp/LA.UM.8.1.r1
           $GIT_CLONE $REMOTE/vendor-qcom-opensource-wlan-qcacld-3.0 $KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/qcacld-3.0 -b aosp/LA.UM.8.1.r1
+        shell: bash
 
       - name: Clone out-of-tree scripts
         run: git clone https://github.com/ix5/oot $BASEDIR/oot -b shared-tmp
 
       - name: Reset kernel to ref of this run
-        if: steps.cache_kernel_repo.outputs.cache-hit == 'true'
+        # Note: cache-hit is set to 'false' if restore-keys is invoked!
+        # So this check is useless:
+        #if: steps.cache_kernel_repo.outputs.cache-hit == 'true'
+        # Instead, just eat the penalty and always force the fetch
         env:
           GIT_FETCH: "git fetch --depth=1 origin"
           GIT_RESET: "git reset --hard"
@@ -142,7 +159,8 @@ jobs:
         shell: bash
 
       - name: Pull latest for repos
-        if: steps.cache_repos.outputs.cache-hit == 'true'
+        #if: steps.cache_repos.outputs.cache-hit == 'true'
+        # Same here: Just always force fetching
         env:
           GIT_FETCH: "git fetch --depth=1 origin"
           GIT_RESET: "git reset --hard"
