@@ -134,9 +134,6 @@ jobs:
           $GIT_RESET origin/$(echo ${{ github.ref }} | sed 's|refs/heads/||')
         shell: bash
 
-      - name: FAIL
-        run: /bin/false
-
       - name: Pull latest for repos
         if: steps.cache_repos.outputs.cache-hit == 'true'
         continue-on-error: true
