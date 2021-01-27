@@ -68,7 +68,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/$COMPILER
+            ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/${{ env.COMPILER }}
           # Save caches once per day
           key: kernel-tmp-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.day }}
           restore-keys: |
