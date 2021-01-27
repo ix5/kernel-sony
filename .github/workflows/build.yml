@@ -90,7 +90,11 @@ jobs:
           # First, checkout base branch (since refs/* not available for clone directly)
           # > warning: Could not find remote branch refs/heads/71r1-github-actions to clone.
           # > fatal: Remote branch refs/heads/71r1-github-actions not found in upstream origin
-          $GIT_CLONE https://github.com/${{ github.repository }} $KERNEL_BASEDIR/kernel -b $KERNEL_BASE_BRANCH
+          # Note: Using sonyxperiadev as origin since $KERNEL_BASE_BRANCH might not exist on fork
+          $GIT_CLONE $REMOTE/kernel $KERNEL_BASEDIR/kernel -b $KERNEL_BASE_BRANCH
+          git remote rename origin sony
+          # Then add fork as "origin"
+          git remote add origin https://github.com/${{ github.repository }}
           git fetch origin ${{ github.ref }}
           git checkout remotes/origin/$(echo ${{ github.ref }} | sed 's|refs/heads/||')
           #$GIT_RESET origin/$(echo ${{ github.ref }} | sed 's|refs/heads/||')
