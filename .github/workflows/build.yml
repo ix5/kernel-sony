@@ -41,7 +41,7 @@ jobs:
     ### Steps ###
     steps:
 
-      - name: Cache/Restore kernel source repos
+      - name: Cache access for Kernel source repos
         id: cache_kernel_repos
         uses: actions/cache@v2
         with:
@@ -51,7 +51,7 @@ jobs:
           restore-keys: |
             kernel-sources-${{ env.KERNEL_VERSION }}-sha-
 
-      - name: Cache/Restore kernel tmp
+      - name: Cache access for Kernel output dir
         id: cache_kernel_tmp
         uses: actions/cache@v2
         with:
