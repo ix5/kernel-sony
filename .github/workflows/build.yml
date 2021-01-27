@@ -42,16 +42,11 @@ jobs:
     ### Steps ###
     steps:
 
-      - name: Get date - Current day
-        id: get-date-day
+      - name: Get date
+        id: get-date
         run: |
-          echo "::set-output name=date::$(/bin/date -u "+%Y-%m-%d")"
-        shell: bash
-
-      - name: Get date - Current month
-        id: get-date-month
-        run: |
-          echo "::set-output name=date::$(/bin/date -u "+%Y-%m")"
+          echo "::set-output name=day::$(/bin/date -u "+%Y-%m-%d")"
+          echo "::set-output name=month::$(/bin/date -u "+%Y-%m")"
         shell: bash
 
       - name: Cache access for Kernel source repos
@@ -61,10 +56,10 @@ jobs:
           path: |
             ${{ env.KERNEL_BASEDIR }}/kernel
           # Save caches once per day
-          key: kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.date }}
+          key: kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.day }}
           restore-keys: |
-            kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date-day.outputs.date }}
-            kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date-month.outputs.date }}
+            kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.day }}
+            kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.month }}
             # Legacy:
             kernel-sources-${{ env.KERNEL_VERSION }}-sha-
 
@@ -75,10 +70,10 @@ jobs:
           path: |
             ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/$COMPILER
           # Save caches once per day
-          key: kernel-tmp-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.date }}
+          key: kernel-tmp-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.day }}
           restore-keys: |
-            kernel-tmp-${{ env.KERNEL_VERSION }}-${{ steps.get-date-day.outputs.date }}
-            kernel-tmp-${{ env.KERNEL_VERSION }}-${{ steps.get-date-month.outputs.date }}
+            kernel-tmp-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.day }}
+            kernel-tmp-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.month }}
             # Legacy:
             kernel-tmp-${{ env.KERNEL_VERSION }}-sha-
 
