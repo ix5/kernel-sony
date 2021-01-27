@@ -34,6 +34,7 @@ jobs:
       REMOTE: "https://github.com/sonyxperiadev"
       BASEDIR: "/srv/android"
       KERNEL_VERSION: "4.14"
+      KERNEL_BASE_BRANCH: "aosp/LA.UM.7.1.r1"
       KERNEL_BASEDIR: "/srv/android/kernel/sony/msm-4.14"
       ANDROID_BUILD_TOP: "/srv/android"
 
@@ -62,12 +63,6 @@ jobs:
         #  with:
         #    path: kernel
         #    fetch_depth: 1
-
-      - uses: actions/cache@v2
-        id: cache_output
-        name: Cache/Restore kernel tmp
-        # https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows#matching-a-cache-key
-        # > The cache with the most recent creation date would be used.
         with:
           path: |
             ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/clang
@@ -80,7 +75,12 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p $KERNEL_BASEDIR/
-          $GIT_CLONE https://github.com/${{ github.repository }} $KERNEL_BASEDIR/kernel -b ${{ github.ref }}
+          # First, checkout base branch (since refs/* not available for clone directly)
+          # > warning: Could not find remote branch refs/heads/71r1-github-actions to clone.
+          # > fatal: Remote branch refs/heads/71r1-github-actions not found in upstream origin
+          $GIT_CLONE https://github.com/${{ github.repository }} $KERNEL_BASEDIR/kernel -b $KERNEL_BASE_BRANCH
+          git fetch origin ${{ github.ref }}
+          git checkout remotes/origin/${{ github.ref }}
 
       - name: ls restored kernel dirs and fail
         continue-on-error: true
@@ -97,12 +97,12 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p $KERNEL_BASEDIR/
-          $GIT_CLONE $REMOTE/device-sony-common-headers $KERNEL_BASEDIR/common-headers -b aosp/LA.UM.7.1.r1
+          $GIT_CLONE $REMOTE/device-sony-common-headers $KERNEL_BASEDIR/common-headers -b $KERNEL_BASE_BRANCH
           # Need to remove existing dir
           rm -rf $GITHUB_WORKSPACE/kernel/techpack/audio
-          $GIT_CLONE $REMOTE/kernel-techpack-audio $KERNEL_BASEDIR/kernel/techpack/audio -b aosp/LA.UM.7.1.r1
-          $GIT_CLONE $REMOTE/kernel-techpack-data-kernel $KERNEL_BASEDIR/kernel/techpack/data-kernel -b aosp/LA.UM.7.1.r1
-          $GIT_CLONE $REMOTE/kernel-defconfig $KERNEL_BASEDIR/kernel/arch/arm64/configs/sony -b aosp/LA.UM.7.1.r1
+          $GIT_CLONE $REMOTE/kernel-techpack-audio $KERNEL_BASEDIR/kernel/techpack/audio -b $KERNEL_BASE_BRANCH
+          $GIT_CLONE $REMOTE/kernel-techpack-data-kernel $KERNEL_BASEDIR/kernel/techpack/data-kernel -b $KERNEL_BASE_BRANCH
+          $GIT_CLONE $REMOTE/kernel-defconfig $KERNEL_BASEDIR/kernel/arch/arm64/configs/sony -b $KERNEL_BASE_BRANCH
           $GIT_CLONE $REMOTE/vendor-qcom-opensource-wlan-fw-api $KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/fw-api -b aosp/LA.UM.8.1.r1
           $GIT_CLONE $REMOTE/vendor-qcom-opensource-wlan-qca-wifi-host-cmn $KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn -b aosp/LA.UM.8.1.r1
           $GIT_CLONE $REMOTE/vendor-qcom-opensource-wlan-qcacld-3.0 $KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/qcacld-3.0 -b aosp/LA.UM.8.1.r1
@@ -128,10 +128,10 @@ jobs:
           GIT_FETCH: "git fetch origin"
           GIT_RESET: "git reset --hard"
         run: |
-          cd $KERNEL_BASEDIR/common-headers && $GIT_FETCH aosp/LA.UM.7.1.r1 && $GIT_RESET origin/aosp/LA.UM.7.1.r1
-          cd $KERNEL_BASEDIR/kernel/techpack/audio && $GIT_FETCH aosp/LA.UM.7.1.r1 && $GIT_RESET origin/aosp/LA.UM.7.1.r1
-          cd $KERNEL_BASEDIR/kernel/techpack/data-kernel && $GIT_FETCH aosp/LA.UM.7.1.r1 && $GIT_RESET origin/aosp/LA.UM.7.1.r1
-          cd $KERNEL_BASEDIR/kernel/arch/arm64/configs/sony && $GIT_FETCH aosp/LA.UM.7.1.r1 && $GIT_RESET origin/aosp/LA.UM.7.1.r1
+          cd $KERNEL_BASEDIR/common-headers && $GIT_FETCH $KERNEL_BASE_BRANCH && $GIT_RESET origin/$KERNEL_BASE_BRANCH
+          cd $KERNEL_BASEDIR/kernel/techpack/audio && $GIT_FETCH $KERNEL_BASE_BRANCH && $GIT_RESET origin/$KERNEL_BASE_BRANCH
+          cd $KERNEL_BASEDIR/kernel/techpack/data-kernel && $GIT_FETCH $KERNEL_BASE_BRANCH && $GIT_RESET origin/$KERNEL_BASE_BRANCH
+          cd $KERNEL_BASEDIR/kernel/arch/arm64/configs/sony && $GIT_FETCH $KERNEL_BASE_BRANCH && $GIT_RESET origin/$KERNEL_BASE_BRANCH
           cd $KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/fw-api && $GIT_FETCH aosp/LA.UM.8.1.r1 && $GIT_RESET origin/aosp/LA.UM.8.1.r1
           cd $KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn && $GIT_FETCH aosp/LA.UM.8.1.r1 && $GIT_RESET origin/aosp/LA.UM.8.1.r1
           cd $KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/qcacld-3.0 && $GIT_FETCH aosp/LA.UM.8.1.r1 && $GIT_RESET origin/aosp/LA.UM.8.1.r1
