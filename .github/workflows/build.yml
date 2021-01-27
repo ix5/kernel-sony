@@ -156,10 +156,18 @@ jobs:
             /srv/android/oot/oot.sh -s ${{ matrix.device }}
         shell: bash
 
-      # Saves about 900MB and will get re-generated anyway
-      - name: Cleanup vmlinux.o before saving caches
+      # Saves a nice deal of space and will get re-generated anyway
+      # 336M .tmp_vmlinux1
+      # 338M .tmp_vmlinux2
+      # 338M vmlinux
+      # 907M vmlinux.o
+      - name: Cleanup intermediates before saving caches
         continue-on-error: true
-        run: rm -f ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/clang/vmlinux.o
+        run: |
+          rm -f ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/clang/vmlinux
+          rm -f ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/clang/vmlinux.o
+          rm -f ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/clang/.tmp_vmlinux1
+          rm -f ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/clang/.tmp_vmlinux2
 
       - name: Archive kernel images
         uses: actions/upload-artifact@v2
