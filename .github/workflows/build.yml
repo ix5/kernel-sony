@@ -46,13 +46,13 @@ jobs:
         name: Cache/Restore kernel source repo
         with:
           path: |
-            $KERNEL_BASEDIR/kernel
-            !$KERNEL_BASEDIR/kernel/techpack/audio
-            !$KERNEL_BASEDIR/kernel/techpack/data-kernel
-            !$KERNEL_BASEDIR/kernel/arch/arm64/configs/sony
-            !$KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/fw-api
-            !$KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn
-            !$KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/qcacld-3.0
+            ${{ env.KERNEL_BASEDIR }}/kernel
+            !${{ env.KERNEL_BASEDIR }}/kernel/techpack/audio
+            !${{ env.KERNEL_BASEDIR }}/kernel/techpack/data-kernel
+            !${{ env.KERNEL_BASEDIR }}/kernel/arch/arm64/configs/sony
+            !${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/fw-api
+            !${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn
+            !${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/qcacld-3.0
           key: kernel-source-${{ env.KERNEL_VERSION }}-${{ github.sha }}
           restore-keys: |
             kernel-source-${{ env.KERNEL_VERSION }}-sha-
@@ -62,12 +62,12 @@ jobs:
         name: Cache/Restore kernel sub-repos
         with:
           path: |
-            $KERNEL_BASEDIR/kernel/techpack/audio
-            $KERNEL_BASEDIR/kernel/techpack/data-kernel
-            $KERNEL_BASEDIR/kernel/arch/arm64/configs/sony
-            $KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/fw-api
-            $KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn
-            $KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/qcacld-3.0
+            ${{ env.KERNEL_BASEDIR }}/kernel/techpack/audio
+            ${{ env.KERNEL_BASEDIR }}/kernel/techpack/data-kernel
+            ${{ env.KERNEL_BASEDIR }}/kernel/arch/arm64/configs/sony
+            ${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/fw-api
+            ${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn
+            ${{ env.KERNEL_BASEDIR }}/kernel/drivers/staging/wlan-qc/qcacld-3.0
           key: kernel-repos-${{ env.KERNEL_VERSION }}-${{ github.sha }}
           restore-keys: |
             kernel-repos-${{ env.KERNEL_VERSION }}-sha-
@@ -163,21 +163,21 @@ jobs:
           rm -rf $BASEDIR/out/target/product
           git clone https://github.com/ix5/sodp-ramdisks -b aosp-10 $BASEDIR/out/target/product
 
-      - name: Run kernel CI script
-        run: |
-            cd /srv/android/oot/
-            /srv/android/oot/oot.sh -s ${{ matrix.device }}
-        shell: bash
+      #- name: Run kernel CI script
+      #  run: |
+      #      cd /srv/android/oot/
+      #      /srv/android/oot/oot.sh -s ${{ matrix.device }}
+      #  shell: bash
 
-      - name: Archive kernel images
-        uses: actions/upload-artifact@v2
-        with:
-          name: boot-image-${{ matrix.device }}
-          path: /srv/android/oot/${{ matrix.device }}-boot.img
+      #- name: Archive kernel images
+      #  uses: actions/upload-artifact@v2
+      #  with:
+      #    name: boot-image-${{ matrix.device }}
+      #    path: /srv/android/oot/${{ matrix.device }}-boot.img
 
-      - name: Archive dtbos
-        uses: actions/upload-artifact@v2
-        with:
-          name: kernel-dtbo.img-${{ matrix.device }}
-          path: /srv/android/oot/${{ matrix.device }}-dtbo.img
+      #- name: Archive dtbos
+      #  uses: actions/upload-artifact@v2
+      #  with:
+      #    name: kernel-dtbo.img-${{ matrix.device }}
+      #    path: /srv/android/oot/${{ matrix.device }}-dtbo.img
 
