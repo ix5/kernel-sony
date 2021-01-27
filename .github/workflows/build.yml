@@ -126,8 +126,8 @@ jobs:
         run: cp -r $GITHUB_WORKSPACE/kernel/ $KERNEL_BASEDIR/kernel
 
       # TEMP until image is rebuilt
-      #- name: TEMP Install clang
-      #  run: apt install -y clang
+      - name: TEMP Install python
+        run: apt install -y python
 
       - name: Run kernel CI script
         continue-on-error: true
