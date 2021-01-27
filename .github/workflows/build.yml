@@ -71,7 +71,7 @@ jobs:
           GIT_FETCH: "git fetch --depth=1 origin"
         run: |
           # Abort if already cloned
-          [ -d $KERNEL_BASEDIR/kernel/.git ] && exit 0
+          [ -d $KERNEL_BASEDIR/kernel/.git ] && cd $KERNEL_BASEDIR/kernel && git status && exit 0
           mkdir -p $KERNEL_BASEDIR/
           # First, checkout base branch (since refs/* not available for clone directly)
           # > warning: Could not find remote branch refs/heads/71r1-github-actions to clone.
