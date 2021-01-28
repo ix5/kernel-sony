@@ -22,10 +22,37 @@ jobs:
     strategy:
       fail-fast: false # Do not stop build if one matrix strand fails
       matrix:
-        device:
-          #- akari
-          - apollo
-          - akatsuki
+        # Manual enumeration to get device:platform pairing
+        include:
+          #- device: pdx201
+          #  platform: seine
+          #- device: griffin
+          #  platform: kumano
+          - device: bahamut
+            platform: kumano
+          #- device: kirin
+          #  platform: ganges
+          #- device: mermaid
+          #  platform: ganges
+          #- device: akari
+          #  platform: tama
+          - device: apollo
+            platform: tama
+          - device: akatsuki
+            platform: tama
+          #- device: pioneer
+          #  platform: nile
+          #- device: discovery
+          #  platform: nile
+          #- device: voyager
+          #  platform: nile
+          #- device: maple
+          #  platform: yoshino
+          #- device: poplar
+          #  platform: yoshino
+          #- device: lilac
+          #  platform: yoshino
+
     runs-on: ubuntu-20.04
     container:
       image: ghcr.io/ix5/kernel-base:dev
@@ -66,12 +93,12 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/${{ env.COMPILER }}
+            ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/${{ env.COMPILER }}/${{ matrix.platform }}
           # Save caches once per day
-          key: kernel-tmp-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.day }}
+          key: kernel-tmp-${{ env.KERNEL_VERSION }}-${{ matrix.platform }}-${{ steps.get-date.outputs.day }}
           restore-keys: |
-            kernel-tmp-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.day }}
-            kernel-tmp-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.month }}
+            kernel-tmp-${{ env.KERNEL_VERSION }}-${{ matrix.platform }}-${{ steps.get-date.outputs.day }}
+            kernel-tmp-${{ env.KERNEL_VERSION }}-${{ matrix.platform }}-${{ steps.get-date.outputs.month }}
 
       - name: Clone kernel repo
         # Note: cache-hit is set to 'false' if restore-keys is invoked!
@@ -167,7 +194,7 @@ jobs:
       - name: Run kernel CI script
         run: |
             cd /srv/android/oot/
-            /srv/android/oot/oot.sh -s ${{ matrix.device }}
+            /srv/android/oot/oot.sh ${{ matrix.device }}
         shell: bash
 
       - name: Archive boot images
@@ -186,21 +213,21 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.device }}-Image.gz
-          path: /srv/android/out/kernel-4.14/clang/arch/arm64/boot/Image.gz
+          path: /srv/android/out/kernel-4.14/${{ env.COMPILER }}/${{ matrix.platform }}/arch/arm64/boot/Image.gz
 
       - name: Archive kernel dtb files
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.device }}-dtbs
           # Note: Might change from qcom/ to somc/
-          path: /srv/android/out/kernel-4.14/clang/arch/arm64/boot/dts/qcom/*.dtb
+          path: /srv/android/out/kernel-4.14/${{ env.COMPILER }}/${{ matrix.platform }}/arch/arm64/boot/dts/qcom/*.dtb
 
       - name: Archive kernel dtbo files
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.device }}-dtbos
           # Note: Might change from qcom/ to somc/
-          path: /srv/android/out/kernel-4.14/clang/arch/arm64/boot/dts/qcom/*.dtbo
+          path: /srv/android/out/kernel-4.14/${{ env.COMPILER }}/${{ matrix.platform }}/arch/arm64/boot/dts/qcom/*.dtbo
 
       # Saves a nice deal of space and will get re-generated anyway
       # 336M .tmp_vmlinux1
@@ -218,15 +245,15 @@ jobs:
       - name: Cleanup intermediates before saving caches
         continue-on-error: true
         run: |
-          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/vmlinux
-          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/vmlinux.o
-          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/.tmp_vmlinux1
-          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/.tmp_vmlinux2
-          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/.tmp_System.map
-          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/.tmp_kallsyms1.o
-          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/.tmp_kallsyms2.o
-          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/.tmp_kallsyms1.S
-          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/.tmp_kallsyms2.S
-          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/arch/arm64/boot/Image
-          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/arch/arm64/boot/Image.gz
-          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/arch/arm64/boot/Image.gz-dtb
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/${{ matrix.platform }}/vmlinux
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/${{ matrix.platform }}/vmlinux.o
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/${{ matrix.platform }}/.tmp_vmlinux1
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/${{ matrix.platform }}/.tmp_vmlinux2
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/${{ matrix.platform }}/.tmp_System.map
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/${{ matrix.platform }}/.tmp_kallsyms1.o
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/${{ matrix.platform }}/.tmp_kallsyms2.o
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/${{ matrix.platform }}/.tmp_kallsyms1.S
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/${{ matrix.platform }}/.tmp_kallsyms2.S
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/${{ matrix.platform }}/arch/arm64/boot/Image
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/${{ matrix.platform }}/arch/arm64/boot/Image.gz
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/${{ matrix.platform }}/arch/arm64/boot/Image.gz-dtb
