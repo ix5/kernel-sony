@@ -60,8 +60,6 @@ jobs:
           restore-keys: |
             kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.day }}
             kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.month }}
-            # Legacy:
-            kernel-sources-${{ env.KERNEL_VERSION }}-sha-
 
       - name: Cache access for Kernel output dir
         id: cache_kernel_tmp
@@ -74,8 +72,6 @@ jobs:
           restore-keys: |
             kernel-tmp-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.day }}
             kernel-tmp-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.month }}
-            # Legacy:
-            kernel-tmp-${{ env.KERNEL_VERSION }}-sha-
 
       - name: Clone kernel repo
         # Note: cache-hit is set to 'false' if restore-keys is invoked!
