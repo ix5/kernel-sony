@@ -1,0 +1,232 @@
+name: Kernel CI
+
+# Controls when the action will run.
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches:
+      # TODO: Get rid of this, only run upon pull requests
+      - 71r1-github-actions
+  pull_request:
+    branches:
+      - aosp/LA.UM.7.1.r1
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  # https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idcontainer
+
+  ### Jobs ###
+  kernel:
+    strategy:
+      fail-fast: false # Do not stop build if one matrix strand fails
+      matrix:
+        device:
+          #- akari
+          - apollo
+          - akatsuki
+    runs-on: ubuntu-20.04
+    container:
+      image: ghcr.io/ix5/kernel-base:dev
+    env:
+      GIT_CLONE: "git clone --single-branch --depth=1"
+      REMOTE: "https://github.com/sonyxperiadev"
+      BASEDIR: "/srv/android"
+      KERNEL_VERSION: "4.14"
+      KERNEL_BASE_BRANCH: "aosp/LA.UM.7.1.r1"
+      KERNEL_BASEDIR: "/srv/android/kernel/sony/msm-4.14"
+      ANDROID_BUILD_TOP: "/srv/android"
+      COMPILER: "clang"
+
+    ### Steps ###
+    steps:
+
+      - name: Get date
+        id: get-date
+        run: |
+          echo "::set-output name=day::$(/bin/date -u "+%Y-%m-%d")"
+          echo "::set-output name=month::$(/bin/date -u "+%Y-%m")"
+        shell: bash
+
+      - name: Cache access for Kernel source repos
+        id: cache_kernel_repos
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ env.KERNEL_BASEDIR }}/kernel
+          # Save caches once per day
+          key: kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.day }}
+          restore-keys: |
+            kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.day }}
+            kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.month }}
+
+      - name: Cache access for Kernel output dir
+        id: cache_kernel_tmp
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/${{ env.COMPILER }}
+          # Save caches once per day
+          key: kernel-tmp-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.day }}
+          restore-keys: |
+            kernel-tmp-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.day }}
+            kernel-tmp-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.month }}
+
+      - name: Clone kernel repo
+        # Note: cache-hit is set to 'false' if restore-keys is invoked!
+        # So this check is useless:
+        #if: steps.cache_kernel_repo.outputs.cache-hit != 'true'
+        # Instead, check if repo already exists and "fail"
+        continue-on-error: true
+        env:
+          GIT_FETCH: "git fetch --depth=1 origin"
+        run: |
+          # Abort if already cloned
+          [ -d $KERNEL_BASEDIR/kernel/.git ] && exit 0
+          mkdir -p $KERNEL_BASEDIR/
+          # First, checkout base branch (since refs/* not available for clone directly)
+          # > warning: Could not find remote branch refs/heads/71r1-github-actions to clone.
+          # > fatal: Remote branch refs/heads/71r1-github-actions not found in upstream origin
+          # Note: Using sonyxperiadev as origin since $KERNEL_BASE_BRANCH might not exist on fork
+          $GIT_CLONE $REMOTE/kernel $KERNEL_BASEDIR/kernel -b $KERNEL_BASE_BRANCH
+          cd $KERNEL_BASEDIR/kernel
+          git remote rename origin sony
+          # Then add fork as "origin"
+          git remote add origin https://github.com/${{ github.repository }}
+          $GIT_FETCH ${{ github.ref }}
+          git checkout remotes/origin/$(echo ${{ github.ref }} | sed 's|refs/heads/||')
+          # Need to remove existing dir
+          rm -rf $KERNEL_BASEDIR/kernel/techpack/audio
+        shell: bash
+
+      - name: Clone kernel sub-repos
+        # Note: cache-hit is set to 'false' if restore-keys is invoked!
+        # So this check is useless:
+        #if: steps.cache_repos.outputs.cache-hit != 'true'
+        # Instead, check if repo already exists and "fail"
+        continue-on-error: true
+        run: |
+          # Abort if already cloned
+          [ -d $KERNEL_BASEDIR/kernel/techpack/audio/.git ] && exit 0
+          mkdir -p $KERNEL_BASEDIR/
+          # Need to remove existing dir
+          rm -rf $KERNEL_BASEDIR/kernel/techpack/audio
+          $GIT_CLONE $REMOTE/kernel-techpack-audio $KERNEL_BASEDIR/kernel/techpack/audio -b $KERNEL_BASE_BRANCH
+          $GIT_CLONE $REMOTE/kernel-techpack-data-kernel $KERNEL_BASEDIR/kernel/techpack/data-kernel -b $KERNEL_BASE_BRANCH
+          $GIT_CLONE $REMOTE/kernel-defconfig $KERNEL_BASEDIR/kernel/arch/arm64/configs/sony -b $KERNEL_BASE_BRANCH
+          $GIT_CLONE $REMOTE/vendor-qcom-opensource-wlan-fw-api $KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/fw-api -b aosp/LA.UM.8.1.r1
+          $GIT_CLONE $REMOTE/vendor-qcom-opensource-wlan-qca-wifi-host-cmn $KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn -b aosp/LA.UM.8.1.r1
+          $GIT_CLONE $REMOTE/vendor-qcom-opensource-wlan-qcacld-3.0 $KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/qcacld-3.0 -b aosp/LA.UM.8.1.r1
+        shell: bash
+
+      - name: Clone out-of-tree scripts
+        run: git clone https://github.com/ix5/oot $BASEDIR/oot -b shared-tmp
+
+      - name: Reset kernel to ref of this run
+        # Note: cache-hit is set to 'false' if restore-keys is invoked!
+        # So this check is useless:
+        #if: steps.cache_kernel_repo.outputs.cache-hit == 'true'
+        # Instead, just eat the penalty and always force the fetch
+        env:
+          GIT_FETCH: "git fetch --depth=1 origin"
+          GIT_RESET: "git reset --hard"
+        run: |
+          cd $KERNEL_BASEDIR/kernel
+          # Trigger re-index so that further hard-reset will not touch non-modified files
+          git status -s
+          $GIT_FETCH ${{ github.ref }}
+          $GIT_RESET origin/$(echo ${{ github.ref }} | sed 's|refs/heads/||')
+        shell: bash
+
+      - name: Pull latest for repos
+        #if: steps.cache_repos.outputs.cache-hit == 'true'
+        # Same here: Just always force fetching
+        env:
+          GIT_FETCH: "git fetch --depth=1 origin"
+          GIT_RESET: "git reset --hard"
+        run: |
+          cd $KERNEL_BASEDIR/kernel/techpack/audio && $GIT_FETCH $KERNEL_BASE_BRANCH && git status -s && $GIT_RESET origin/$KERNEL_BASE_BRANCH
+          cd $KERNEL_BASEDIR/kernel/techpack/data-kernel && $GIT_FETCH $KERNEL_BASE_BRANCH && git status -s && $GIT_RESET origin/$KERNEL_BASE_BRANCH
+          cd $KERNEL_BASEDIR/kernel/arch/arm64/configs/sony && $GIT_FETCH $KERNEL_BASE_BRANCH && git status -s && $GIT_RESET origin/$KERNEL_BASE_BRANCH
+          cd $KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/fw-api && $GIT_FETCH aosp/LA.UM.8.1.r1 && git status -s && $GIT_RESET origin/aosp/LA.UM.8.1.r1
+          cd $KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/qca-wifi-host-cmn && $GIT_FETCH aosp/LA.UM.8.1.r1 && git status -s && $GIT_RESET origin/aosp/LA.UM.8.1.r1
+          cd $KERNEL_BASEDIR/kernel/drivers/staging/wlan-qc/qcacld-3.0 && $GIT_FETCH aosp/LA.UM.8.1.r1 && git status -s && $GIT_RESET origin/aosp/LA.UM.8.1.r1
+
+      - name: Clone ramdisk images
+        # sodp-ramdisks contains following structure:
+        # | sodp-ramdisks (as "product")
+        # |-- apollo
+        #     |-- ramdisk.img
+        #     | - ramdisk-recovery.img
+        run: |
+          mkdir -p $BASEDIR/out/target
+          rm -rf $BASEDIR/out/target/product
+          git clone https://github.com/ix5/sodp-ramdisks -b aosp-10 $BASEDIR/out/target/product
+
+      - name: Run kernel CI script
+        run: |
+            cd /srv/android/oot/
+            /srv/android/oot/oot.sh -s ${{ matrix.device }}
+        shell: bash
+
+      - name: Archive boot images
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.device }}-boot.img
+          path: /srv/android/oot/${{ matrix.device }}-boot.img
+
+      - name: Archive dtbo images
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.device }}-dtbo.img
+          path: /srv/android/oot/${{ matrix.device }}-dtbo.img
+
+      - name: Archive gzipped kernel images
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.device }}-Image.gz
+          path: /srv/android/out/kernel-4.14/clang/arch/arm64/boot/Image.gz
+
+      - name: Archive kernel dtb files
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.device }}-dtbs
+          # Note: Might change from qcom/ to somc/
+          path: /srv/android/out/kernel-4.14/clang/arch/arm64/boot/dts/qcom/*.dtb
+
+      - name: Archive kernel dtbo files
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.device }}-dtbos
+          # Note: Might change from qcom/ to somc/
+          path: /srv/android/out/kernel-4.14/clang/arch/arm64/boot/dts/qcom/*.dtbo
+
+      # Saves a nice deal of space and will get re-generated anyway
+      # 336M .tmp_vmlinux1
+      # 338M .tmp_vmlinux2
+      # 338M vmlinux
+      # 907M vmlinux.o
+      # 5,5M .tmp_System.map
+      # 2,3M .tmp_kallsyms1.o
+      # 2,3M .tmp_kallsyms2.o
+      # 14M  .tmp_kallsyms1.S
+      # 14M  .tmp_kallsyms2.S
+      # 35M arch/arm64/boot/Image
+      # 13M arch/arm64/boot/Image.gz
+      # 15M arch/arm64/boot/Image.gz-dtb
+      - name: Cleanup intermediates before saving caches
+        continue-on-error: true
+        run: |
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/vmlinux
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/vmlinux.o
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/.tmp_vmlinux1
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/.tmp_vmlinux2
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/.tmp_System.map
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/.tmp_kallsyms1.o
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/.tmp_kallsyms2.o
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/.tmp_kallsyms1.S
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/.tmp_kallsyms2.S
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/arch/arm64/boot/Image
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/arch/arm64/boot/Image.gz
+          rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/arch/arm64/boot/Image.gz-dtb
