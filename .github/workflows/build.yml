@@ -76,17 +76,17 @@ jobs:
           echo "::set-output name=month::$(/bin/date -u "+%Y-%m")"
         shell: bash
 
-      - name: Cache access for Kernel source repos
+      - name: Cache access for compressed Kernel source repos
         id: cache_kernel_repos
         uses: actions/cache@v2
         with:
           path: |
-            ${{ env.KERNEL_BASEDIR }}/kernel
+            ${{ env.BASEDIR }}/kernel-sources-${{ env.KERNEL_VERSION }}.tar.br
           # Save caches once per day
-          key: kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.day }}
+          key: kernel-sources-tar-br-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.day }}
           restore-keys: |
-            kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.day }}
-            kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.month }}
+            kernel-sources-tar-br-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.day }}
+            kernel-sources-tar-br-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.month }}
 
       - name: Cache access for compressed Kernel output dir
         id: cache_kernel_tmp
@@ -116,6 +116,20 @@ jobs:
           tar -xf  ${{ env.BASEDIR }}/out-kernel-${{ env.KERNEL_VERSION }}-${{ env.COMPILER }}-${{ matrix.platform }}.tar -P -C ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/${{ env.COMPILER }}/${{ matrix.platform }}/
           rm -f  ${{ env.BASEDIR }}/out-kernel-${{ env.KERNEL_VERSION }}-${{ env.COMPILER }}-${{ matrix.platform }}.tar
           ls -la ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/${{ env.COMPILER }}/${{ matrix.platform }}/
+        shell: bash
+
+      - name: Attempt extracting compressed Kernel source dir
+        continue-on-error: true
+        run: |
+          # Abort if no archive found
+          [ ! -f $BASEDIR/kernel-sources-${{ env.KERNEL_VERSION }}.tar.br ] && exit 0
+          cd $BASEDIR
+          brotli -d ${{ env.BASEDIR }}/kernel-sources-${{ env.KERNEL_VERSION }}.tar.br
+          rm -f ${{ env.BASEDIR }}/kernel-sources-${{ env.KERNEL_VERSION }}.tar.br
+          mkdir -p $KERNEL_BASEDIR/
+          tar -xf ${{ env.BASEDIR }}/kernel-sources-${{ env.KERNEL_VERSION }}.tar -P -C $KERNEL_BASEDIR
+          rm -f ${{ env.BASEDIR }}/kernel-sources-${{ env.KERNEL_VERSION }}.tar
+          ls -la $KERNEL_BASEDIR
         shell: bash
 
       - name: Clone kernel repo
@@ -315,6 +329,19 @@ jobs:
           cd $BASEDIR
           tar --posix -cf ${{ env.BASEDIR }}/out-kernel-${{ env.KERNEL_VERSION }}-${{ env.COMPILER }}-${{ matrix.platform }}.tar -P -C ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/${{ env.COMPILER }}/${{ matrix.platform }} .
           brotli -k -q 6 ${{ env.BASEDIR }}/out-kernel-${{ env.KERNEL_VERSION }}-${{ env.COMPILER }}-${{ matrix.platform }}.tar -o ${{ env.BASEDIR }}/out-kernel-${{ env.KERNEL_VERSION }}-${{ env.COMPILER }}-${{ matrix.platform }}.tar.br
+          # Free up some runner resources so it won't run out of disk space when running post-cache@v2
           rm -f ${{ env.BASEDIR }}/out-kernel-${{ env.KERNEL_VERSION }}-${{ env.COMPILER }}-${{ matrix.platform }}.tar
           rm -rf ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/${{ env.COMPILER }}/${{ matrix.platform }}
+        shell: bash
+
+      - name: Compress Kernel source dir
+        # We can save some time by skipping this step if kernel sources will not be uploaded anyway
+        if: steps.cache_kernel_repos.outputs.cache-hit != 'true'
+        run: |
+          cd $BASEDIR
+          tar --posix -cf ${{ env.BASEDIR }}/kernel-sources-${{ env.KERNEL_VERSION }}.tar -P -C $KERNEL_BASEDIR .
+          brotli -k -q 6 ${{ env.BASEDIR }}/kernel-sources-${{ env.KERNEL_VERSION }}.tar -o ${{ env.BASEDIR }}/kernel-sources-${{ env.KERNEL_VERSION }}.tar.br
+          # Free up some runner resources so it won't run out of disk space when running post-cache@v2
+          rm -f ${{ env.BASEDIR }}/kernel-sources-${{ env.KERNEL_VERSION }}.tar
+          rm -rf $KERNEL_BASEDIR
         shell: bash
