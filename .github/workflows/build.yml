@@ -38,8 +38,8 @@ jobs:
           #  platform: tama
           - device: apollo
             platform: tama
-          - device: akatsuki
-            platform: tama
+          #- device: akatsuki
+          #  platform: tama
           #- device: pioneer
           #  platform: nile
           #- device: discovery
@@ -88,17 +88,35 @@ jobs:
             kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.day }}
             kernel-sources-${{ env.KERNEL_VERSION }}-${{ steps.get-date.outputs.month }}
 
-      - name: Cache access for Kernel output dir
+      - name: Cache access for compressed Kernel output dir
         id: cache_kernel_tmp
         uses: actions/cache@v2
         with:
           path: |
-            ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/${{ env.COMPILER }}/${{ matrix.platform }}
+            ${{ env.BASEDIR }}/out-kernel-${{ env.KERNEL_VERSION }}-${{ env.COMPILER }}-${{ matrix.platform }}.tar.br
+            #${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/${{ env.COMPILER }}/${{ matrix.platform }}
           # Save caches once per day
-          key: kernel-tmp-${{ env.KERNEL_VERSION }}-${{ matrix.platform }}-${{ steps.get-date.outputs.day }}
+          key: kernel-tmp-tar-br-${{ env.KERNEL_VERSION }}-${{ matrix.platform }}-${{ steps.get-date.outputs.day }}
           restore-keys: |
-            kernel-tmp-${{ env.KERNEL_VERSION }}-${{ matrix.platform }}-${{ steps.get-date.outputs.day }}
-            kernel-tmp-${{ env.KERNEL_VERSION }}-${{ matrix.platform }}-${{ steps.get-date.outputs.month }}
+            kernel-tmp-tar-br-${{ env.KERNEL_VERSION }}-${{ matrix.platform }}-${{ steps.get-date.outputs.day }}
+            kernel-tmp-tar-br-${{ env.KERNEL_VERSION }}-${{ matrix.platform }}-${{ steps.get-date.outputs.month }}
+
+      - name: TEMP install brotli
+        run: apt install -y brotli
+
+      - name: Attempt extracting compressed Kernel output dir
+        continue-on-error: true
+        run: |
+          # Abort if no archive found
+          [ ! -f $BASEDIR/out-kernel-${{ env.KERNEL_VERSION }}-${{ env.COMPILER }}-${{ matrix.platform }}.tar.br ] && exit 0
+          cd $BASEDIR
+          brotli -d ${{ env.BASEDIR }}/out-kernel-${{ env.KERNEL_VERSION }}-${{ env.COMPILER }}-${{ matrix.platform }}.tar.br
+          rm -f ${{ env.BASEDIR }}/out-kernel-${{ env.KERNEL_VERSION }}-${{ env.COMPILER }}-${{ matrix.platform }}.tar.br
+          mkdir -p ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/${{ env.COMPILER }}/${{ matrix.platform }}/
+          tar -xf  ${{ env.BASEDIR }}/out-kernel-${{ env.KERNEL_VERSION }}-${{ env.COMPILER }}-${{ matrix.platform }}.tar -P -C ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/${{ env.COMPILER }}/${{ matrix.platform }}/
+          rm -f  ${{ env.BASEDIR }}/out-kernel-${{ env.KERNEL_VERSION }}-${{ env.COMPILER }}-${{ matrix.platform }}.tar
+          ls -la ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/${{ env.COMPILER }}/${{ matrix.platform }}/
+        shell: bash
 
       - name: Clone kernel repo
         # Note: cache-hit is set to 'false' if restore-keys is invoked!
@@ -195,6 +213,10 @@ jobs:
         run: |
             cd /srv/android/oot/
             /srv/android/oot/oot.sh ${{ matrix.device }}
+        #run: |
+        #  mkdir -p ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/${{ env.COMPILER }}/${{ matrix.platform }}/
+        #  touch ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/${{ env.COMPILER }}/${{ matrix.platform }}/Makefile
+        #  ls -la ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/${{ env.COMPILER }}/${{ matrix.platform }}/
         shell: bash
 
       - name: Archive boot images
@@ -257,3 +279,42 @@ jobs:
           rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/${{ matrix.platform }}/arch/arm64/boot/Image
           rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/${{ matrix.platform }}/arch/arm64/boot/Image.gz
           rm -f $BASEDIR/out/kernel-$KERNEL_VERSION/$COMPILER/${{ matrix.platform }}/arch/arm64/boot/Image.gz-dtb
+
+      # Compress using brotli instead of gzip
+      # 196M cache.br     <-- brotli
+      # 195M cache.br.gz  <-- brotli+gzip penalty
+      # 1,3G cache.tar
+      # 338M cache.tgz    <-- gzip
+      #
+      # == Create gzip-compressed tar as run by cache@v2 ===
+      # time tar --posix -z -cf cache.tgz -P -C out-kernel-4.14-clang/ .
+      # tar --posix -z -cf cache.tgz -P -C out-kernel-4.14-clang/ .  77,23s user 2,66s system 102% cpu 1:17,93 total
+      #
+      # ### total gzip: 77.2s ###
+      #
+      # === Create uncompressed tar ===
+      # time tar --posix -cf cache.tar -P -C out-kernel-4.14-clang/ .
+      # tar --posix -cf cache.tar -P -C out-kernel-4.14-clang/ .  0,22s user 1,88s system 47% cpu 4,446 total
+      # === Brotli-compress plain tar ===
+      # time brotli cache.tar -k -q 6 -o cache.br -v
+      # Compressed [cache.tar]: 1.289 GiB -> 195.187 MiB
+      # brotli cache.tar -k -q 6 -o cache.br -v  67,39s user 0,65s system 99% cpu 1:08,59 total
+      # === cache@v2 will attempt to re-compress, assuming most costly compression level of 9 ===
+      # time gzip --keep -9 cache.br
+      # gzip --keep -9 cache.br  8,90s user 0,10s system 99% cpu 9,012 total
+      #
+      # ### total brotli: 67.4s + 0.2s + 8.9s ~= 76.5s ###
+      #
+      # --> We can fit almost 1.7x as many archives into cache if
+      #     pre-compressing using brotli and still not lose too much time
+
+      - name: Compress Kernel output dir
+        # We can save some time by skipping this step if kernel tmp will not be uploaded anyway
+        if: steps.cache_kernel_tmp.outputs.cache-hit != 'true'
+        run: |
+          cd $BASEDIR
+          tar --posix -cf ${{ env.BASEDIR }}/out-kernel-${{ env.KERNEL_VERSION }}-${{ env.COMPILER }}-${{ matrix.platform }}.tar -P -C ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/${{ env.COMPILER }}/${{ matrix.platform }} .
+          brotli -k -q 6 ${{ env.BASEDIR }}/out-kernel-${{ env.KERNEL_VERSION }}-${{ env.COMPILER }}-${{ matrix.platform }}.tar -o ${{ env.BASEDIR }}/out-kernel-${{ env.KERNEL_VERSION }}-${{ env.COMPILER }}-${{ matrix.platform }}.tar.br
+          rm -f ${{ env.BASEDIR }}/out-kernel-${{ env.KERNEL_VERSION }}-${{ env.COMPILER }}-${{ matrix.platform }}.tar
+          rm -rf ${{ env.BASEDIR }}/out/kernel-${{ env.KERNEL_VERSION }}/${{ env.COMPILER }}/${{ matrix.platform }}
+        shell: bash
